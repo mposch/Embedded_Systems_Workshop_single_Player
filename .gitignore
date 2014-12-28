@@ -1,2 +1,3 @@
 /userstdio.o
 *.o
+*.gdb
