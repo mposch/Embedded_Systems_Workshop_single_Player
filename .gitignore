@@ -1,3 +1,4 @@
 /userstdio.o
 *.o
 *.gdb
+/userstdio
