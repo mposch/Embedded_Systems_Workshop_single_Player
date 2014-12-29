@@ -5,7 +5,6 @@
 int main (void)
 {
 	int result = 0;
-
 	(void) printf("Calling i2c init and test functions..\n");
 	result =  i2c_init();
 	i2c_test();
