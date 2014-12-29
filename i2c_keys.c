@@ -7,9 +7,24 @@
  *
  */
 #include <i2c_keys.h>
+
 #include <stdio.h>
 #include<linux/i2c.h>
 #include<lpc246x.h>
+
+void i2c_test()
+{
+
+}
+
+int i2c_init()
+{
+
+	return 0;
+
+}
+
+
 
 
 

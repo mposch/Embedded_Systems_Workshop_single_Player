@@ -8,7 +8,9 @@
 #ifndef I2C_KEYS_H_
 #define I2C_KEYS_H_
 
+void i2c_test();
 
+int i2c_init();
 
 
 #endif /* I2C_KEYS_H_ */
