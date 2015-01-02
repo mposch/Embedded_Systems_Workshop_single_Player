@@ -210,12 +210,8 @@ ssize_t ctest_read(struct file *p_file,
 		      char __user *p_buf, 
 		      size_t count, 
 		      loff_t *p_pos) {
-	
-	
-	/* use copy_to_user(dst, src, size)) to copy data from kernel
+		/* use copy_to_user(dst, src, size)) to copy data from kernel
 	to user space*/;
-
-
 	return (0);
 
 }
@@ -292,7 +288,7 @@ static int __init ctest_mod_init(void){
 
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Matthias Wenzl");
+MODULE_AUTHOR("Matthias Wenzl,Matthias Posch, Thomas Bittner");
 MODULE_DESCRIPTION("Example driver skeleton");
 // Mandatory, anounce init and exit functions
 module_init(ctest_mod_init);

@@ -2,105 +2,108 @@
  * I2C
  *
  * This File contains the i2c init routines and a test routines for the keys 1-4.
- * Tarfet Board: Lpc 2478
+ * Target Board: Lpc 2478
  *
  *
  */
 #include <i2c_keys.h>
 
-#include <stdio.h>
-#include<linux/i2c.h>
-#include<linux/i2c-dev.h>
-#include<lpc246x.h>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
 
-void i2c_test()
-{
-	printf("i2c test Function:");
+
+
+static int fd;
+static int error;
+static uint8_t key_state;
+
+void i2c_test() {
+	//debug_print("i2c test Function:");
+	debug_print("i2c test  function called", 0);
 
 }
-
-int i2c_init()
-{
-	int f = 0;
-	int error = 0;
-	char buf[100];
-
-	// Assumption of address
-
-
-
-	printf("i2c init Fuction:");
-	// Open device. I assume 0 is the correct device.
-	 f = open(I2C_BUS_4GEW, O_RDWR);
-	 if (f < 0) {
-		 printf("open error!");
-		 goto cleanup;
-	 }
-	 // set the salve device address
-	 int b =0;
-
-	 for ( b = 0;b<3600;b++)
-	 {
-	//	 sleep(1);
-
-
-
-	 error = ioctl (f,I2C_SLAVE,I2C_ADDR_4GEW);
-	 if (error != 0)
-			 {
-		 	 	// printf("ioctrl error: %i at adress %x \n",error,addr);
-		 	 	 //goto cleanup;
-			 }else
-				 {
-			//	 printf("IOCTL success at adress %x   ...",addr);
-			//	 printf("Probing device.....");
-				 	 if ( read (f,buf,10) != 10)
-				 	 {
-					 // ERROR
-				//	 printf ("FAILED\n");
-				 	 }else
-				 	 {
-				 		 printf("\nSUCCESS at adress 0x%x",I2C_ADDR_4GEW);
-				 		 printf ("...Raw data: " );
-				 		 int i = 0;
-				 		 for (i=0;i<10;i++) printf ("%x ",buf[i]);
-				 		 // Write back data
-				 	//	if (addr==0x60)  write (f,buf,1);
-
-				 	 }
-
-
-				 }
-
-
-	 }// end for a
-
-	 // set one led to on
-
-
-	 if (error != 0)
-	 {
-		 printf("Write error!");
-		 goto cleanup;
-	 }
-
+int i2c_init() {
+	debug_print("...i2c init Fuction called...",0);
+	fd = open(I2C_BUS_4GEW, O_RDWR);
+	if (fd < 0) {
+		debug_print("Error opening I2C device! ", 1);
+		goto cleanup;
+	}
+	error = ioctl(fd, I2C_SLAVE, I2C_ADDR_4GEW);
+	if (error != 0) {
+		goto cleanup;
+	}
+	debug_print("Init Function success!",0);
+	// read in current state
+	key_state=0;
+	i2c_state_change();
 	return 0;
 	cleanup:
-	 printf (strerror (errno));
-	if (f!=0) close(f);
-	printf("cleaning up...");
+	debug_print(strerror (errno), 1);
+	debug_print("Cleaning up I2C ...", 1);
+	if (fd != 0)
+		close(fd);
 	return error;
 }
 
+int i2c_close() {
+	debug_print("Closing I2C Device..", 1);
+	if (fd != 0) {
+		error = close(fd);
+		if (error < 0) {
+			debug_print("Error Closing I2C Device!", 1);
+			debug_print(strerror (errno), 1);
+			return error;
+		}
+	}
+	return error;
+}
 
+/*
+ * Returns the state of the Keys as inidacted by the i2c driver.
+ *
+ *
+ */
+uint8_t  i2c_getkey_state() {
+	uint8_t  value = 0;
+	if (read(fd,&value,1) != 1)
+	{
+		// Read Error
+		debug_print("I2C: Error reading from Device!",0);
+		debug_print(strerror (errno), 1);
+	}
+return value;
+}
+/*
+ * Checks if there is a state change.
+ * Stores the actual state of the Keys, for evaluation with i2c_keypreessed()
+ *
+ */
+int i2c_state_change()
+{
+	uint8_t new_state = i2c_getkey_state();
+	if (key_state != new_state)
+	{
+		key_state = new_state;
+		return 1;
+	}
+	// No state change...
+	else return 0;
+}
+/*
+ * Returns the stored state of the keys.
+ */
+uint8_t i2c_getKeyState()
+{
+	return key_state;
+}
 
+/*
+ * Returns > 0 when the indicated key is pressed
+ * Returns 0 if the key is not pressed
+ * Should be called immediately after i2c_state_changed!
+ */
+int  i2c_keypressed(int key)
+{
 
-
-
+	if ((~key_state & (1 << (key-1))) != 0) return 1;
+	else return 0;
+}
