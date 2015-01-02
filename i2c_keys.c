@@ -30,29 +30,60 @@ int i2c_init()
 {
 	int f = 0;
 	int error = 0;
-	char buf[10];
+	char buf[100];
 
 	// Assumption of address
-	int addr = 0xC0;
+
 
 
 	printf("i2c init Fuction:");
 	// Open device. I assume 0 is the correct device.
-	 f = open("/dev/i2c-2", O_RDWR);
+	 f = open(I2C_BUS_4GEW, O_RDWR);
 	 if (f < 0) {
 		 printf("open error!");
 		 goto cleanup;
 	 }
 	 // set the salve device address
-	 error = ioctl (f,I2C_SLAVE,addr);
+	 int b =0;
+
+	 for ( b = 0;b<3600;b++)
+	 {
+	//	 sleep(1);
+
+
+
+	 error = ioctl (f,I2C_SLAVE,I2C_ADDR_4GEW);
 	 if (error != 0)
 			 {
-		 	 	 printf("ioctrl error: %i",error);
-		 	 	goto cleanup;
-			 }
+		 	 	// printf("ioctrl error: %i at adress %x \n",error,addr);
+		 	 	 //goto cleanup;
+			 }else
+				 {
+			//	 printf("IOCTL success at adress %x   ...",addr);
+			//	 printf("Probing device.....");
+				 	 if ( read (f,buf,10) != 10)
+				 	 {
+					 // ERROR
+				//	 printf ("FAILED\n");
+				 	 }else
+				 	 {
+				 		 printf("\nSUCCESS at adress 0x%x",I2C_ADDR_4GEW);
+				 		 printf ("...Raw data: " );
+				 		 int i = 0;
+				 		 for (i=0;i<10;i++) printf ("%x ",buf[i]);
+				 		 // Write back data
+				 	//	if (addr==0x60)  write (f,buf,1);
+
+				 	 }
+
+
+				 }
+
+
+	 }// end for a
+
 	 // set one led to on
-	 buf[0]=0x00;
-	 error = write (f,buf,1);
+
 
 	 if (error != 0)
 	 {
