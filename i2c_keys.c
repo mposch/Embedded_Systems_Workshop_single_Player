@@ -21,7 +21,7 @@ void i2c_test() {
 
 }
 int i2c_init() {
-	debug_print("...i2c init Fuction called...",0);
+	debug_print("...i2c init Fuction called...",1);
 	fd = open(I2C_BUS_4GEW, O_RDWR);
 	if (fd < 0) {
 		debug_print("Error opening I2C device! ", 1);
@@ -31,7 +31,7 @@ int i2c_init() {
 	if (error != 0) {
 		goto cleanup;
 	}
-	debug_print("Init Function success!",0);
+	debug_print("Init Function success!",1);
 	// read in current state
 	key_state=0;
 	i2c_state_change();

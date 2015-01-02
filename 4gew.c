@@ -5,11 +5,11 @@
 
 int main(void) {
 	int result = 0;
-	(void) printf("Calling i2c init and test functions..\n");
+	debug_print("Calling i2c init and test functions..\n",0);
 
 	result = i2c_init();
 	if (result != 0)
-		debug_print("MAIN: Error I2C initialisation.", 100);
+		debug_print("MAIN: Error I2C initialisation.", 0);
 
 	// A small test for Keys,..,
 
