@@ -1,0 +1,55 @@
+#!/usr/bin/expect -f
+
+if {$argc!=2} {
+  send_error "Usage : $argv0 path program_to_debug\n"
+exit 1;
+}
+
+#first argument in tcl can be reached using [lrange $argv 0 0] for example, $argv0 is the NAME of the script!
+set path [lrange $argv 0 0]
+set name [lrange $argv 1 1]
+
+puts $path
+
+set lprg $path
+append lprg $name
+
+set rprg "/var/"
+append rprg $name
+
+proc sighandler {} {
+
+puts "kill program"
+
+spawn telnet 192.168.5.233
+expect "(none) login: "
+send "root\n"
+expect "root:~>"
+send "pkill -9 $name\n"
+send "exit\n"
+
+}
+
+
+trap sighandler {SIGINT SIGTERM SIGHUP}
+
+set timeout 300
+spawn ftp 192.168.5.233
+expect "Name (192.168.5.233:es): "
+send "root\n"
+expect "Password:"
+send "\n"
+expect "ftp> "
+send "put $lprg $rprg\n"
+expect "ftp> "
+send "quit\n"
+
+spawn telnet 192.168.5.233
+expect "(none) login: "
+send "root\n"
+expect "root:~>"
+send "chmod u+x $rprg\n"
+send "$rprg\n"
+interact
+send "exit\n"
+expect eof
