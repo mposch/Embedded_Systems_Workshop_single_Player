@@ -27,6 +27,8 @@ link command ln -s /home/es/DevEnv/Embsys_4gewinnt/lpc2478_4gew.c
 #include <asm/uaccess.h> /*Interaction with user space*/
 
 
+#include<linux/timer.h> //needed for softtimer from kernel
+
 #include <generated/utsrelease.h> /*defines UTS_RELEASE macro*/
 
 /* Board specific definitions*/
@@ -121,6 +123,10 @@ struct ctest {
 
 static struct ctest ctest_dev;
 
+struct timer_list timer;
+
+int gpio_value[5] = {0,0,0,0,0};
+
 /*
 Attach driver specific functions to Linux Kernel file operation structure.
 These functions are used by the Kernel to access the device driver.
@@ -142,14 +148,58 @@ static struct file_operations ctest_fops = {
 /******************************************************************************
  * Local functions
  *****************************************************************************/
+void timer_callback (unsigned long data){
+	static int i = 0;
+	if(i == 100){
+		printk("callback function called: %d\n",timer.expires);
+		i = 0;
+	}
+	i++;
+	if(gpio_value[0] != (m_reg_read(FIO2PIN2) & (1<< 6))){
+		printk("GPIO Wert geändert!!!\n");
+		gpio_value[0] = m_reg_read(FIO2PIN2) & (1<<6);
+		printk("neuer Wert: %d\n",gpio_value[0]);
+	}
+	printk("GPIO Value: %d\n",m_reg_read(FIO2PIN2) );
+
+	//add_timer(&timer);
+}
+
+//Function to initialize GPIO pins P2.22,P2.23 and P2.25 - P2.27 (Joystick)
+void init_gpio(){
+
+	//Setze GPIO pins auf Funktion GPIO
+	m_reg_bfc(PINSEL5,((3<<12) | (3<<14) | (3<<18) | (3 << 20) | (3 << 22))); //Bit 12,13 = P2.22 Bit 14,15 = P2.23 Bit 18,19 = P2.25 Bit 20,21 = P2.26 Bit 22,23 = P2.27
+																															//Durch BFC werden damit die Bits 12 bis 15 und 18 bis 23 auf 0 gesetzt.
+
+	m_reg_bfc(FIO2DIR2,(3 << 6)); //Set P2.22 and P2.23 to input
+	m_reg_bfc(FIO2DIR3,(7 << 1)); //Set P2.25 to P2.27 to input
+
+	printk("FIO2DIR: %x\n",m_reg_read(PINMODE5));
+
+}
+
 int ctest_setup(struct ctest *dev) {
 
 	struct cdev *cdev = &(dev->cdev);
     
+	init_timer(&timer); //timer initialisieren
+
+
+
+	timer.expires = 10;			//expires = nach wie vielen Jiffies die callback function aufgerufen werden soll
+	timer.function = (*timer_callback);		//callback Function die aufgerufen werden soll
+	timer.data = 10;		//daten für die Callback function. Kann auch ein auf unsinged long gecasteter pointer auf eine struct sein
+
 	cdev_init(cdev, &ctest_fops);
 	cdev->owner = THIS_MODULE;
 	cdev->ops = &ctest_fops;
 
+	init_gpio(); //TODO: move init GPIO to open
+	printk("gpio initialized\n");
+	timer_callback(0); //first callback call um timer zu starten. Für entwicklungszwecke in setup gesetzt, soll danach nach open verschoben werden.
+	//TODO: timer_callback() call nach open verschieben
+	printk("Timer Callback called\n");
 return 0;
 }
 
@@ -210,8 +260,12 @@ ssize_t ctest_read(struct file *p_file,
 		      char __user *p_buf, 
 		      size_t count, 
 		      loff_t *p_pos) {
-		/* use copy_to_user(dst, src, size)) to copy data from kernel
+	
+	
+	/* use copy_to_user(dst, src, size)) to copy data from kernel
 	to user space*/;
+
+
 	return (0);
 
 }
@@ -233,7 +287,7 @@ return -EINVAL;
 
 
 /* Free any dynamically allocated data here.*/
-static void __exit ctest_mod_exit(void)
+static void __exit esw_4gew_exit(void)
 {
 
 	struct cdev *cdev = &ctest_dev.cdev;
@@ -244,7 +298,7 @@ static void __exit ctest_mod_exit(void)
 
 }
 
-static int __init ctest_mod_init(void){
+static int __init esw_4gew_init(void){
 	int ret;
 	dev_t devno = 0;
 
@@ -288,10 +342,10 @@ static int __init ctest_mod_init(void){
 
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Matthias Wenzl,Matthias Posch, Thomas Bittner");
-MODULE_DESCRIPTION("Example driver skeleton");
+MODULE_AUTHOR("Thomas Bittner & Matthias Posch");
+MODULE_DESCRIPTION("4 Gewinnt Treiber");
 // Mandatory, anounce init and exit functions
-module_init(ctest_mod_init);
-module_exit(ctest_mod_exit);
+module_init(esw_4gew_init);
+module_exit(esw_4gew_exit);
 
 
