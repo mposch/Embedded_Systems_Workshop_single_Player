@@ -75,7 +75,7 @@
 		<project id="Embsys_4gewinnt.null.503733949" name="Embsys_4gewinnt"/>
 	</storageModule>
 	<storageModule moduleId="refreshScope" versionNumber="1">
-		<resource resourceType="PROJECT" workspacePath="/Embsys_4gewinnt"/>
+		<resource resourceType="PROJECT" workspacePath="/Embedded_Systems_Workshop_single_Player"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 	<storageModule moduleId="scannerConfiguration">
