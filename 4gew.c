@@ -50,18 +50,27 @@ int main(void) {
 
 // test ncurses
 
-	  initscr();
-	    printw("Hello World");
-	    refresh();
-	    getch();
-	    endwin();
-	    return 0;
+	//  initscr();
+	 //   printw("Hello World");
+
+	  //  refresh();
+	   // getch();
+	   // endwin();
+	    //return 0;
 while (1)
 {
 	// A small test for Keys,.
+#define ASCII_ESC 27
+#define ESC 27
+
+
 
 	show_keystate();
 	usleep(10000);
+	if (i2c_keypressed(1))  printf( "%c[2J", ESC );
+
+	if (i2c_keypressed(2))  fputc(64,stdout);
+
 	if (i2c_keypressed(4)) break;
 }
 
