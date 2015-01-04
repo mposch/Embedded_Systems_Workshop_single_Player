@@ -25,9 +25,10 @@ link command ln -s /home/es/DevEnv/Embsys_4gewinnt/lpc2478_4gew.c
 #include <linux/cdev.h>/*Char device structures and functions*/
 #include <linux/kdev_t.h>	/* needed for the dynamic major and minor number creation*/
 #include <asm/uaccess.h> /*Interaction with user space*/
+#include<linux/i2c.h>
 
 
-#include<linux/timer.h> //needed for softtimer from kernel
+#include<linux/timer.h> //needed for soft-timer from kernel
 
 #include <generated/utsrelease.h> /*defines UTS_RELEASE macro*/
 

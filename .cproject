@@ -47,6 +47,9 @@
 									<listOptionValue builtIn="false" value="/home/es/uClinux-dist/include"/>
 									<listOptionValue builtIn="false" value="/home/es/uClinux-dist/linux-2.6.x/include"/>
 									<listOptionValue builtIn="false" value="/home/es/uClinux-dist/uClibc/include"/>
+									<listOptionValue builtIn="false" value="/usr/local/arm-linux/include"/>
+									<listOptionValue builtIn="false" value="/home/es/uClinux-dist/user/elvis-tiny"/>
+									<listOptionValue builtIn="false" value="/home/es/workspace/ncurses-5.9/include"/>
 								</option>
 								<inputType id="org.eclipse.cdt.cross.arm.gnu.linux.c.compiler.base.input.669622245" superClass="org.eclipse.cdt.cross.arm.gnu.linux.c.compiler.base.input"/>
 							</tool>
