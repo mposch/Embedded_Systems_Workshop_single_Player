@@ -1,5 +1,5 @@
 /*
-link command ln -s /home/es/DevEnv/Embsys_4gewinnt/lpc2478_4gew.c
+link command ln -s /home/es/workspace/Embedded_Systems_Workshop_single_Player/lpc2478_4gew.c
 
     This module implements a driver for LPC2468 ctest peripheral.
 
@@ -25,22 +25,25 @@ link command ln -s /home/es/DevEnv/Embsys_4gewinnt/lpc2478_4gew.c
 #include <linux/cdev.h>/*Char device structures and functions*/
 #include <linux/kdev_t.h>	/* needed for the dynamic major and minor number creation*/
 #include <asm/uaccess.h> /*Interaction with user space*/
-#include<linux/i2c.h>
-
+#include <linux/syscalls.h>
+#include <linux/interrupt.h>
+#include <asm-generic/ioctls.h>/*ioctl CTEST_SETPID*/
+#include <linux/spinlock.h>
 
 #include<linux/timer.h> //needed for soft-timer from kernel
 
 #include <generated/utsrelease.h> /*defines UTS_RELEASE macro*/
-
+#include <linux/signal.h>
+#include <linux/sched.h>
 /* Board specific definitions*/
-#include "asm/hardware/lpc24xx.h"
+#include "asm/hardware/lpc246x.h"
 
 /******************************************************************************
  * Typedefs and defines
  *****************************************************************************/
 
 /*Identifier used by the interrupt service routine*/
-#define DEVICE_NAME "lpc2478_chardrv_min"
+#define DEVICE_NAME "lpc2478_4gew"
 
 /*
 Character devices amongst others are represented by device files usually located in /dev.
@@ -100,12 +103,17 @@ ssize_t ctest_write(struct file *p_file,
 		      size_t count, 
 		      loff_t *p_pos);
 
-
+static long ctest_ioctl (struct file *file,unsigned int cmd,	unsigned long arg);
 
 /******************************************************************************
  * Local variables and function prototypes
  *****************************************************************************/
 
+static spinlock_t lock;
+static pid_t user_pid;
+/* needed for send_sig() */
+static struct task_struct *tsk;
+static struct siginfo info;
 
 /*structure to keep everything in one place*/
 struct ctest {
@@ -126,7 +134,10 @@ static struct ctest ctest_dev;
 
 struct timer_list timer;
 
-int gpio_value[5] = {0,0,0,0,0};
+uint8_t gpio_values[5] = {0,0,0,0,0};
+uint8_t i2c_values[4] = {0,0,0,0};
+
+static uint8_t key_state = 0;
 
 /*
 Attach driver specific functions to Linux Kernel file operation structure.
@@ -141,6 +152,7 @@ static struct file_operations ctest_fops = {
   .write   = ctest_write,
   .open    = ctest_open,
   .release = ctest_close,
+  .unlocked_ioctl	 = ctest_ioctl
 };
 
 
@@ -149,34 +161,156 @@ static struct file_operations ctest_fops = {
 /******************************************************************************
  * Local functions
  *****************************************************************************/
+
+//get_gpio_values detects falling edges on the joystick
+int get_gpio_values(){
+	int i = 0;
+	if( gpio_values[0] == 0 && FIO2PIN2 & (1<<6)){
+			gpio_values[0] = 1;
+		}else if(gpio_values[0] == 1 &&!(FIO2PIN2 & (1<<6))){
+			gpio_values[0] = 0;
+			i++;
+		}
+
+
+	if( gpio_values[1] == 0 && FIO2PIN2 & (1<<7)){
+			gpio_values[1] = 1;
+		}else if(gpio_values[1] == 1 &&!(FIO2PIN2 & (1<<7))){
+			gpio_values[1] = 0;
+			i++;
+		}
+
+	if(gpio_values[2] == 0 && FIO2PIN3 & (1<<1)){
+		gpio_values[2] = 1;
+	}else if(gpio_values[2] == 1 && !(FIO2PIN3 & (1<<1))){
+		gpio_values[2] = 0;
+		i++;
+	}
+
+	if(gpio_values[3] == 0 && FIO2PIN3 & (1 << 2)){
+		gpio_values[3] = 1;
+	}else if(gpio_values[3] == 1 && !(FIO2PIN3 & (1<<2))){
+		gpio_values[3] = 0;
+		i++;
+	}
+
+
+	if(gpio_values[4] == 0 && FIO2PIN3 & (1 << 3)){
+		gpio_values[4] = 1;
+	}else if(gpio_values[4] == 1 && !(FIO2PIN3 & (1<<3))){
+		gpio_values[4] = 0;
+		i++;
+	}
+
+	return i;
+}
+
+void i2c_start(){
+	I20CONSET = (1 << 5);
+}
+
 void timer_callback (unsigned long data){
 	static int i = 0;
-	if(i == 100){
-		printk("callback function called: %d\n",timer.expires);
-		i = 0;
-	}
-	i++;
-	if(gpio_value[0] != (m_reg_read(FIO2PIN2) & (1<< 6))){
-		printk("GPIO Wert geändert!!!\n");
-		gpio_value[0] = m_reg_read(FIO2PIN2) & (1<<6);
-		printk("neuer Wert: %d\n",gpio_value[0]);
-	}
-	printk("GPIO Value: %d\n",m_reg_read(FIO2PIN2) );
+	if(get_gpio_values()){
+		//printk("joystick pressed\n");
+		//printk("signal: %d\n",SIGUSR1);
+		send_sig_info(SIGUSR1,&info,tsk);
 
-	//add_timer(&timer);
+	}
+	i2c_start();
+	timer.expires += 10;
+	add_timer(&timer);
+}
+
+static irqreturn_t i2c_interrupt(int irq, void *dev_id){
+	int i = 0;
+	switch(I20STAT){
+		case 0x08:		//start condition
+		case 0x10:		//repeated start condition
+			I20DAT = 0xC1;
+			//I20DAT = (i2c_address << 1) | 1;
+			I20CONCLR = (1<<3) | (1 << 5);
+			break;
+		case 0x40:		//SLA+W transmitted and ACK received
+			//printk("Adresse %x liefert ACK\n",I20DAT);
+			I20CONCLR = (1<<3);
+			break;
+		case 0x58:		//data received, NACK send
+			if(key_state != I20DAT){
+				if(i2c_values[0] == 0 && I20DAT & 1){
+					i2c_values[0] = 1;
+				}else if(i2c_values[0] == 1 && !(I20DAT & 1)){
+					i2c_values[0] = 0;
+					//printk("key pressed\n");
+					i++;
+				}
+				if(i2c_values[1] == 0 && I20DAT & (1 << 1)){
+					i2c_values[1] = 1;
+				}else if(i2c_values[1] == 1 && !(I20DAT & (1 << 1))){
+					i2c_values[1] = 0;
+					//printk("key pressed\n");
+					i++;
+				}
+				if(i2c_values[2] == 0 && I20DAT & (1 << 2)){
+					i2c_values[2] = 1;
+				}else if(i2c_values[2] == 1 && !(I20DAT & (1 << 2))){
+					i2c_values[2] = 0;
+					//printk("key pressed\n");
+					i++;
+				}
+				if(i2c_values[3] == 0 && I20DAT & (1 << 3)){
+					i2c_values[3] = 1;
+				}else if(i2c_values[3] == 1 && !(I20DAT & (1 << 3))){
+					i2c_values[3] = 0;
+					//printk("key pressed\n");
+					i++;
+				}
+				if(i){
+					send_sig_info(SIGUSR1,&info,tsk);
+				}
+				//printk("Key Pressed 0x%x\n",I20DAT);
+				//key_state = I20DAT;
+			}
+			I20CONCLR = (1<<3);
+			I20CONSET = (1 << 4);
+			break;
+		default:
+			printk("Status: %x\n",I20STAT);
+	}
+}
+
+int init_i2c(){
+	int ret;
+	ret = request_irq(9, i2c_interrupt, 0, DEVICE_NAME, NULL);
+	if (ret < 0){
+		printk("%s: Could not bind interrupt. Error: %i\n",DEVICE_NAME,ret);
+	return -EIO;
+	}
+
+	PCONP |= (1<<7); //activate I2C0
+	PINSEL1 &= ~((1 << 23) | (1 << 25));
+	PINSEL1 |= (1<<22) | (1 << 24);
+	PINMODE1 = (10 << 22);
+
+	I20DAT = 0x60;
+	I20CONSET = 0x60; //activate master only mode
+
+	return 0;
 }
 
 //Function to initialize GPIO pins P2.22,P2.23 and P2.25 - P2.27 (Joystick)
 void init_gpio(){
 
 	//Setze GPIO pins auf Funktion GPIO
-	m_reg_bfc(PINSEL5,((3<<12) | (3<<14) | (3<<18) | (3 << 20) | (3 << 22))); //Bit 12,13 = P2.22 Bit 14,15 = P2.23 Bit 18,19 = P2.25 Bit 20,21 = P2.26 Bit 22,23 = P2.27
-																															//Durch BFC werden damit die Bits 12 bis 15 und 18 bis 23 auf 0 gesetzt.
+	//m_reg_bfc(PINSEL5,((3<<12) | (3<<14) | (3<<18) | (3 << 20) | (3 << 22))); //Bit 12,13 = P2.22 Bit 14,15 = P2.23 Bit 18,19 = P2.25 Bit 20,21 = P2.26 Bit 22,23 = P2.27
+	PINSEL5 &= ~((3<<12) | (3<<14) | (3<<18) | (3 << 20) | (3 << 22));//Durch BFC werden damit die Bits 12 bis 15 und 18 bis 23 auf 0 gesetzt.
 
-	m_reg_bfc(FIO2DIR2,(3 << 6)); //Set P2.22 and P2.23 to input
-	m_reg_bfc(FIO2DIR3,(7 << 1)); //Set P2.25 to P2.27 to input
+	//m_reg_bfc(FIO2DIR2,(3 << 6)); //Set P2.22 and P2.23 to input
+	//m_reg_bfc(FIO2DIR3,(7 << 1)); //Set P2.25 to P2.27 to input
+	FIO2DIR2 &= ~(3<<6);
+	FIO2DIR3 &= ~(7 << 1);
 
-	printk("FIO2DIR: %x\n",m_reg_read(PINMODE5));
+	//printk("FIO2DIR: %x\n",m_reg_read(PINMODE5));
 
 }
 
@@ -184,23 +318,13 @@ int ctest_setup(struct ctest *dev) {
 
 	struct cdev *cdev = &(dev->cdev);
     
-	init_timer(&timer); //timer initialisieren
 
-
-
-	timer.expires = 10;			//expires = nach wie vielen Jiffies die callback function aufgerufen werden soll
-	timer.function = (*timer_callback);		//callback Function die aufgerufen werden soll
-	timer.data = 10;		//daten für die Callback function. Kann auch ein auf unsinged long gecasteter pointer auf eine struct sein
 
 	cdev_init(cdev, &ctest_fops);
 	cdev->owner = THIS_MODULE;
 	cdev->ops = &ctest_fops;
 
-	init_gpio(); //TODO: move init GPIO to open
-	printk("gpio initialized\n");
-	timer_callback(0); //first callback call um timer zu starten. Für entwicklungszwecke in setup gesetzt, soll danach nach open verschoben werden.
-	//TODO: timer_callback() call nach open verschieben
-	printk("Timer Callback called\n");
+
 return 0;
 }
 
@@ -213,37 +337,59 @@ return 0;
 
 /*
 Open the device, only one process can open it at a time.
-
 */
+
 static int ctest_open(struct inode* inode, 
                     struct file* file) {
 
 
-	/*enable fast gpio ports - only applicable if THIS module
-	is the only one using gpio ports*/
-	
-	// Setup registers
-	// Read current state
-	
-	//unsigned long tmp = m_reg_read(GPIO2);
-	//tmp=0;
-	
-	
-	// Let led P2_10 blink!
-	
-	
-	
-	// Setup registers
-	
-	// Setup Register DIrection
-	
-	// Clear Led
+	init_timer(&timer); //timer initialisieren
 
+	timer.expires = jiffies;			//expires = nach wie vielen Jiffies die callback function aufgerufen werden soll
+	timer.function = (*timer_callback);		//callback Function die aufgerufen werden soll
+	timer.data = 10;		//daten für die Callback function. Kann auch ein auf unsinged long gecasteter pointer auf eine struct sein
 
+	init_gpio();
+	init_i2c();
+	timer_callback(0); //first callback call um timer zu starten. Für entwicklungszwecke in setup gesetzt, soll danach nach open verschoben werden.
 
     return 0;
   
 }
+
+static long ctest_ioctl (struct file *file,unsigned int cmd,	unsigned long arg)
+{
+#ifdef DEBUG
+	printk("in ioctl\n");
+#endif
+	switch(cmd)
+	{
+		case CTEST_SETPID:
+			memset(&info, 0, sizeof(struct siginfo));
+			info.si_signo = SIGUSR1;
+			info.si_code = SI_KERNEL;
+			info.si_int = 1234;
+			/*without interrupt blocking*/
+			spin_lock_bh(&lock);
+			user_pid = arg;
+			spin_unlock_bh(&lock);
+
+			tsk = find_task_by_vpid(user_pid);	// get the task, which called this driver (arg = pid
+			if(tsk == NULL)
+			{
+				printk("no such pid \n");
+				return -ENODEV;
+			}
+			break;
+		default:
+			printk("no valid arg for ioctl\n");
+			break;
+	}
+	printk("ioctl: user_pid: %lu \n", arg);
+	return 0;
+
+}
+
 
 static int ctest_close(struct inode* inode, 
                      struct file* file) {
@@ -251,8 +397,10 @@ static int ctest_close(struct inode* inode,
 	
 	/*disable fast gpio ports - only applicable if THIS module
 	is the only one using gpio ports*/
-	m_reg_bfc(SCS,(1<<0));
-
+	//m_reg_bfc(SCS,(1<<0));
+	free_irq(9,NULL);
+	del_timer(&timer);
+	SCS &= ~(1<<0);
 	return 0;
 
 }
@@ -293,7 +441,6 @@ static void __exit esw_4gew_exit(void)
 
 	struct cdev *cdev = &ctest_dev.cdev;
 	dev_t devno = ctest_dev.devno;
-
   	cdev_del(cdev);
 	unregister_chrdev_region(MAJOR(devno), 1);
 
