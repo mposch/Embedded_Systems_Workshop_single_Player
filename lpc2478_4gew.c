@@ -134,8 +134,18 @@ static struct ctest ctest_dev;
 
 struct timer_list timer;
 
-uint8_t gpio_values[5] = {0,0,0,0,0};
-uint8_t i2c_values[4] = {0,0,0,0};
+//uint8_t gpio_values[5] = {0,0,0,0,0};
+//uint8_t i2c_values[4] = {0,0,0,0};
+
+struct data {
+	uint8_t gpio_values[5];
+	uint8_t i2c_values[4];
+};
+
+struct data key_data;
+
+uint8_t *gpio_values = key_data.gpio_values;
+uint8_t *i2c_values = key_data.i2c_values;
 
 static uint8_t key_state = 0;
 
@@ -352,7 +362,14 @@ static int ctest_open(struct inode* inode,
 	init_gpio();
 	init_i2c();
 	timer_callback(0); //first callback call um timer zu starten. Für entwicklungszwecke in setup gesetzt, soll danach nach open verschoben werden.
-
+	int i = 0;
+	for(i = 0;i<4;i++){
+		i2c_values[i] = 0;
+	}
+	i = 0;
+	for( i = 0; i < 5;i++){
+		gpio_values[i] = 0;
+	}
     return 0;
   
 }
@@ -409,13 +426,16 @@ ssize_t ctest_read(struct file *p_file,
 		      char __user *p_buf, 
 		      size_t count, 
 		      loff_t *p_pos) {
-	
+	if(count < sizeof(struct data)){
+		printk("Buffer im user space zu klein!!!\n");
+		return 0;
+	}
 	
 	/* use copy_to_user(dst, src, size)) to copy data from kernel
 	to user space*/;
+	copy_to_user(p_buf,(char *)&(key_data),sizeof(struct data));
 
-
-	return (0);
+	return (sizeof(struct data));
 
 }
 
