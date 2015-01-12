@@ -46,6 +46,8 @@ void sig_handler(int sig){
 			}else {
 
 			}
+		}else if((key_data.gpio_values[0] != old_data.gpio_values[0]) && !key_data.gpio_values[0]){
+			active_player = ~active_player;
 		}
 
 	}else{
@@ -61,6 +63,8 @@ void sig_handler(int sig){
 			}else{
 
 			}
+		}else if((key_data.gpio_values[0] != old_data.gpio_values[0]) && !key_data.gpio_values[0]){
+			active_player = ~active_player;
 		}
 	}
 	int i;
