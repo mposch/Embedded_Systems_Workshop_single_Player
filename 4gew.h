@@ -1,24 +1,21 @@
-/*
- * 4gew.h
- *
- *  Created on: 2 Jan 2015
- *      Author: es
- */
 
-#ifndef VIERGEW_H_
-#define VIERGEW_H_
+#ifndef viergew_h
 
-#define debug_print(fmt, ...) \
-            do { if (DEBUG) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
+#define viergew_h
 
+extern volatile int player1_position;
+extern volatile int player2_position;
+extern volatile int active_player;
+extern const int column_width;
+extern const int line_height;
+extern const int column_count;
 
+extern int fd;
 
-// Enable Debug messages Change to 0 to disable debug messages
+void clearScreen();
+void print_header();
+void printLine(int line_number);
+void printFields();
+void exit_tui();
 
-#define DEBUG 0
-
-
-
-
-
-#endif /* 4GEW_H_ */
+#endif

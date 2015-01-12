@@ -115,6 +115,8 @@ static pid_t user_pid;
 static struct task_struct *tsk;
 static struct siginfo info;
 
+static int opened = 0;
+static int sig_count = 0;
 /*structure to keep everything in one place*/
 struct ctest {
 	/* dev_t is a 32bit variable with 12 bits for the major number and 20 for the minor number 
@@ -148,6 +150,7 @@ uint8_t *gpio_values = key_data.gpio_values;
 uint8_t *i2c_values = key_data.i2c_values;
 
 static uint8_t key_state = 0;
+static int pid_count = 0;
 
 /*
 Attach driver specific functions to Linux Kernel file operation structure.
@@ -177,6 +180,7 @@ int get_gpio_values(){
 	int i = 0;
 	if( gpio_values[0] == 0 && FIO2PIN2 & (1<<6)){
 			gpio_values[0] = 1;
+			i++;
 		}else if(gpio_values[0] == 1 &&!(FIO2PIN2 & (1<<6))){
 			gpio_values[0] = 0;
 			i++;
@@ -185,6 +189,7 @@ int get_gpio_values(){
 
 	if( gpio_values[1] == 0 && FIO2PIN2 & (1<<7)){
 			gpio_values[1] = 1;
+			i++;
 		}else if(gpio_values[1] == 1 &&!(FIO2PIN2 & (1<<7))){
 			gpio_values[1] = 0;
 			i++;
@@ -192,6 +197,7 @@ int get_gpio_values(){
 
 	if(gpio_values[2] == 0 && FIO2PIN3 & (1<<1)){
 		gpio_values[2] = 1;
+		i++;
 	}else if(gpio_values[2] == 1 && !(FIO2PIN3 & (1<<1))){
 		gpio_values[2] = 0;
 		i++;
@@ -199,6 +205,7 @@ int get_gpio_values(){
 
 	if(gpio_values[3] == 0 && FIO2PIN3 & (1 << 2)){
 		gpio_values[3] = 1;
+		i++;
 	}else if(gpio_values[3] == 1 && !(FIO2PIN3 & (1<<2))){
 		gpio_values[3] = 0;
 		i++;
@@ -207,6 +214,7 @@ int get_gpio_values(){
 
 	if(gpio_values[4] == 0 && FIO2PIN3 & (1 << 3)){
 		gpio_values[4] = 1;
+		i++;
 	}else if(gpio_values[4] == 1 && !(FIO2PIN3 & (1<<3))){
 		gpio_values[4] = 0;
 		i++;
@@ -221,7 +229,7 @@ void i2c_start(){
 
 void timer_callback (unsigned long data){
 	static int i = 0;
-	if(get_gpio_values()){
+	if(get_gpio_values() && pid_count){
 		//printk("joystick pressed\n");
 		//printk("signal: %d\n",SIGUSR1);
 		send_sig_info(SIGUSR1,&info,tsk);
@@ -275,7 +283,7 @@ static irqreturn_t i2c_interrupt(int irq, void *dev_id){
 					//printk("key pressed\n");
 					i++;
 				}
-				if(i){
+				if(i && sig_count){
 					send_sig_info(SIGUSR1,&info,tsk);
 				}
 				//printk("Key Pressed 0x%x\n",I20DAT);
@@ -291,6 +299,7 @@ static irqreturn_t i2c_interrupt(int irq, void *dev_id){
 
 int init_i2c(){
 	int ret;
+
 	ret = request_irq(9, i2c_interrupt, 0, DEVICE_NAME, NULL);
 	if (ret < 0){
 		printk("%s: Could not bind interrupt. Error: %i\n",DEVICE_NAME,ret);
@@ -353,23 +362,29 @@ static int ctest_open(struct inode* inode,
                     struct file* file) {
 
 
-	init_timer(&timer); //timer initialisieren
 
-	timer.expires = jiffies;			//expires = nach wie vielen Jiffies die callback function aufgerufen werden soll
-	timer.function = (*timer_callback);		//callback Function die aufgerufen werden soll
-	timer.data = 10;		//daten für die Callback function. Kann auch ein auf unsinged long gecasteter pointer auf eine struct sein
+	if(!opened){
+		init_timer(&timer); //timer initialisieren
 
-	init_gpio();
-	init_i2c();
-	timer_callback(0); //first callback call um timer zu starten. Für entwicklungszwecke in setup gesetzt, soll danach nach open verschoben werden.
-	int i = 0;
-	for(i = 0;i<4;i++){
-		i2c_values[i] = 0;
+		timer.expires = jiffies;			//expires = nach wie vielen Jiffies die callback function aufgerufen werden soll
+		timer.function = (*timer_callback);		//callback Function die aufgerufen werden soll
+		timer.data = 10;		//daten für die Callback function. Kann auch ein auf unsinged long gecasteter pointer auf eine struct sein
+
+		init_gpio();
+		init_i2c();
+		timer_callback(0); //first callback call um timer zu starten. Für entwicklungszwecke in setup gesetzt, soll danach nach open verschoben werden.
+		int i = 0;
+		for(i = 0;i<4;i++){
+			i2c_values[i] = 0;
+		}
+		i = 0;
+		for( i = 0; i < 5;i++){
+			gpio_values[i] = 0;
+		}
 	}
-	i = 0;
-	for( i = 0; i < 5;i++){
-		gpio_values[i] = 0;
-	}
+
+	opened++; //count how many times opened
+
     return 0;
   
 }
@@ -377,7 +392,7 @@ static int ctest_open(struct inode* inode,
 static long ctest_ioctl (struct file *file,unsigned int cmd,	unsigned long arg)
 {
 #ifdef DEBUG
-	printk("in ioctl\n");
+	//printk("in ioctl\n");
 #endif
 	switch(cmd)
 	{
@@ -397,12 +412,13 @@ static long ctest_ioctl (struct file *file,unsigned int cmd,	unsigned long arg)
 				printk("no such pid \n");
 				return -ENODEV;
 			}
+			pid_count = 1;
 			break;
 		default:
 			printk("no valid arg for ioctl\n");
 			break;
 	}
-	printk("ioctl: user_pid: %lu \n", arg);
+	//printk("ioctl: user_pid: %lu \n", arg);
 	return 0;
 
 }
@@ -415,9 +431,12 @@ static int ctest_close(struct inode* inode,
 	/*disable fast gpio ports - only applicable if THIS module
 	is the only one using gpio ports*/
 	//m_reg_bfc(SCS,(1<<0));
-	free_irq(9,NULL);
-	del_timer(&timer);
-	SCS &= ~(1<<0);
+	if(opened == 1){ //free irq and delete timer only when last time closed
+		free_irq(9,NULL);
+		del_timer(&timer);
+		SCS &= ~(1<<0);
+	}
+	opened--;
 	return 0;
 
 }
