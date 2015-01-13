@@ -109,8 +109,9 @@ int init_4gew(){
 
 
 
-
+//Disable buffering in console
 	system ("/bin/stty raw");
+//Disable echoing
 	system ("/bin/stty -echo");
 	return 0;
 }
