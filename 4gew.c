@@ -27,8 +27,8 @@ struct data key_data;
 struct data old_data;
 
 void drop(){
-	int i = 6;
-	for (i = 6;i>=0;i--){
+	int i = GAMEFIELD_HEIGTH-1;
+	for (i = GAMEFIELD_HEIGTH-1;i>=0;i--){
 		if(fields[player_position[active_player]][i] == 0){
 			fields[player_position[active_player]][i] = active_player + 1;
 			break;

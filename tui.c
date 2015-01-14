@@ -12,6 +12,12 @@
 #define FG_BLUE "%c[34m",ESC
 #define FG_GREEN "%c[32m",ESC
 
+#define BG_BLUE  "%c[44m",ESC
+#define BG_GREEN "%c[42m",ESC
+#define BG_DEFAULT "%c[49m",ESC
+#define BG_BLACK "%c[40m",ESC
+
+
 #define CURSOR_POS(X,Y) "%c[%d;%dH",ESC,X,Y
 
 //#define CLEAR_ABOVE_CURSOR "%c[37m",ESC
@@ -30,41 +36,44 @@ void exit_tui(){
  * Clears the VT100 Screen
  */
 void clearScreen(){
+	printf(BG_DEFAULT);
 	printf(CLS); // Clear screen
 	printf(HOME); // home position cusor
 }
-
 // Prints a dropped item at the specified row and column. Uses line_ width and line height.
 void print_dropped(int column,int row,int player){
-	int x = (column*GAMEFIELD_WIDTH);
-	int y = (row*GAMEFIELD_HEIGTH)+8;
+
+	int x = (column*COLUMN_WIDTH);
+	int y = (row*ROW_HEIGHT)+ROW_HEIGHT;
 	int i = 0;
 	int j = 0;
 	printf(CURSOR_POS(y,x));
-	//printf("%c[%d;%dH",ESC,y,x);
+	for(i=0;i<ROW_HEIGHT;i++){
+		for(j=0;j<COLUMN_WIDTH;j++){
+			if (player==1) printf(BG_GREEN);
+			else printf(BG_BLUE);
 
-	for(i=0;i<GAMEFIELD_HEIGTH;i++){
-		for(j=0;j<GAMEFIELD_WIDTH;j++){
 			printf("=");
+
 		}
 		printf(CURSOR_POS(y+i,x));
-		//printf("%c[%d;%dH",ESC,y+i,x);
 	}
-
+	printf(BG_DEFAULT);
 }
+
 /*
  * Prints a column, if necessary print a occupied field
  */
-
 void print_column(int column){
-	int i = 6;
-	for(i = 6;i>=0;i--){
+	int i = GAMEFIELD_HEIGTH-1;
+	for(i = GAMEFIELD_HEIGTH-1;i>=0;i--){
 		if(fields[column][i] != 0){
 			print_dropped(column,i,fields[column][i]);
 			break;
 		}
 	}
 }
+
 void print_header(){
 
 	printf(CURSOR_POS(8,0)); // Position cursor at 8/0
