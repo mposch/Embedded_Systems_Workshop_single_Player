@@ -15,3 +15,10 @@ prog: $(OBJ)
 
 clean:
 	rm -f *~ *.gdb $(EXEC) $(OBJ)
+
+transfer: prog
+	./scripts/transfer.script ./ $(EXEC)
+run: prog
+	./scripts/run.script ./ $(EXEC)
+debug: prog
+	./scripts/gdb.script ./ $(EXEC)
