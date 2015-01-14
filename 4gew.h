@@ -6,11 +6,10 @@
  */
 #define GAMEFIELD_WIDTH 7 // Defines the number of droppable slots
 #define GAMEFIELD_HEIGTH 6 // Defines how large the game field should be
-
 #define ANSWER_TO_EVERYTHING 42 // Obvoius
 
-#define  COLUMN_WIDTH  6 // How many spaces shall be used when
-#define  ROW_HEIGHT  6  // how many lines shall be used when drawing the field
+#define  COLUMN_WIDTH  3 // How many spaces shall be used when
+#define  ROW_HEIGHT  3 // how many lines shall be used when drawing the field
 
 //#define column_count  7
 
@@ -28,6 +27,8 @@ extern volatile int fields[GAMEFIELD_WIDTH][GAMEFIELD_HEIGTH];
 extern int fd;
 
 void print_column(int column);
+void print_dropped(int column,int row,int player);
+
 void clearScreen();
 void print_header();
 void printLine(int line_number);

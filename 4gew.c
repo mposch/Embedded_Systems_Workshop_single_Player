@@ -10,7 +10,7 @@
 #include <sys/ioctl.h>/*ioctl(),...*/
 #include <asm-generic/ioctls.h>/*ioctls identifiers*/
 
-volatile int player_position[2];
+volatile int player_position[3];
 volatile int active_player;
 volatile int fields[GAMEFIELD_WIDTH][GAMEFIELD_HEIGTH];
 
@@ -25,25 +25,26 @@ struct data {
 
 struct data key_data;
 struct data old_data;
-
 void drop(){
 	int i = GAMEFIELD_HEIGTH-1;
-	for (i = GAMEFIELD_HEIGTH-1;i>=0;i--){
-		if(fields[player_position[active_player]][i] == 0){
-			fields[player_position[active_player]][i] = active_player + 1;
+	for (i = GAMEFIELD_HEIGTH-1;i>=0;i--)
+	{
+		if(fields[player_position[active_player]][i] == 0)
+		{
+			fields[player_position[active_player]][i] = active_player;
+			print_dropped(player_position[active_player],i,active_player);
+
 			break;
 		}
 	}
-	print_column(player_position[active_player]);
 }
-
 void sig_handler(int sig){
 // Received a signal. Keypressed or Joytick pressed.
 
 	read(fd,&key_data,sizeof(struct data));
 	// Check Joystick Right
 	if((key_data.gpio_values[2] != old_data.gpio_values[2]) && !key_data.gpio_values[2]){
-		if(player_position[active_player] < GAMEFIELD_WIDTH){
+		if(player_position[active_player] < GAMEFIELD_WIDTH-1){
 			player_position[active_player]++;
 		}else {
 
@@ -55,11 +56,10 @@ void sig_handler(int sig){
 		}else {
 
 		}
-
 	}else if((key_data.gpio_values[0] != old_data.gpio_values[0]) && !key_data.gpio_values[0]){
-		if(active_player){
+		if(active_player == 1){
 			drop();
-			active_player = 0;
+			active_player = 2;
 		}else{
 			drop();
 			active_player = 1;
@@ -78,6 +78,7 @@ void sig_handler(int sig){
 
 int init_4gew(){
 	int i,j;
+	active_player = 1;
 	for(i = 0; i < 5;i++){
 		key_data.gpio_values[i] = 0;
 		old_data.gpio_values[i] = 0;
