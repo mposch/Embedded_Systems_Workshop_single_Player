@@ -4,13 +4,15 @@
 /*
  * Global Defines
  */
-#define FIELD_WIDTH 7
-#define FIELD_HEIGTH 6
-#define ANSWER_TO_EVERYTHING 42
+#define GAMEFIELD_WIDTH 7 // Defines the number of droppable slots
+#define GAMEFIELD_HEIGTH 6 // Defines how large the game field should be
 
-#define  column_width  13
-#define  line_height  6
-#define column_count  7
+#define ANSWER_TO_EVERYTHING 42 // Obvoius
+
+#define  COLUMN_WIDTH  6 // How many spaces shall be used when
+#define  ROW_HEIGHT  6  // how many lines shall be used when drawing the field
+
+//#define column_count  7
 
 
 
@@ -20,7 +22,7 @@ extern volatile int active_player;
 //extern const int column_width;
 //extern const int line_height;
 //extern const int column_count;
-extern volatile int fields[FIELD_WIDTH][FIELD_HEIGTH];
+extern volatile int fields[GAMEFIELD_WIDTH][GAMEFIELD_HEIGTH];
 
 
 extern int fd;

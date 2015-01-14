@@ -12,7 +12,7 @@
 
 volatile int player_position[2];
 volatile int active_player;
-volatile int fields[FIELD_WIDTH][FIELD_HEIGTH];
+volatile int fields[GAMEFIELD_WIDTH][GAMEFIELD_HEIGTH];
 
 
 
@@ -38,15 +38,17 @@ void drop(){
 }
 
 void sig_handler(int sig){
+// Received a signal. Keypressed or Joytick pressed.
 
 	read(fd,&key_data,sizeof(struct data));
-
+	// Check Joystick Right
 	if((key_data.gpio_values[2] != old_data.gpio_values[2]) && !key_data.gpio_values[2]){
-		if(player_position[active_player] < column_count){
+		if(player_position[active_player] < GAMEFIELD_WIDTH){
 			player_position[active_player]++;
 		}else {
 
 		}
+
 	}else if((key_data.gpio_values[4] != old_data.gpio_values[4]) && !key_data.gpio_values[4]){
 		if(player_position[active_player] > 0){
 			player_position[active_player]--;
@@ -84,8 +86,8 @@ int init_4gew(){
 		key_data.i2c_values[i] = 0;
 		old_data.i2c_values[i] = 0;
 	}
-	for(i = 0; i < FIELD_WIDTH;i++){
-		for(j = 0; j < FIELD_HEIGTH;j++){
+	for(i = 0; i < GAMEFIELD_WIDTH;i++){
+		for(j = 0; j < GAMEFIELD_HEIGTH;j++){
 			fields[i][j] = 0;
 		}
 	}

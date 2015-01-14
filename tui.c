@@ -5,10 +5,18 @@
  */
 #define ESC 27
 #define CLS "%c[2J",ESC
+#define CLEAR_ABOVE_CURSOR "%c[1J",ESC
+
 #define HOME "%c[H",ESC
 #define FG_WHITE "%c[37m",ESC
+#define FG_BLUE "%c[34m",ESC
+#define FG_GREEN "%c[32m",ESC
+
 #define CURSOR_POS(X,Y) "%c[%d;%dH",ESC,X,Y
-#define CLEAR_ABOVE_CURSOR "%c[37m",ESC
+
+//#define CLEAR_ABOVE_CURSOR "%c[37m",ESC
+
+
 /*
  * exit_tui
  * Clean up VT100 Settings
@@ -28,15 +36,15 @@ void clearScreen(){
 
 // Prints a dropped item at the specified row and column. Uses line_ width and line height.
 void print_dropped(int column,int row,int player){
-	int x = (column*column_width);
-	int y = (row*line_height)+8;
+	int x = (column*GAMEFIELD_WIDTH);
+	int y = (row*GAMEFIELD_HEIGTH)+8;
 	int i = 0;
 	int j = 0;
 	printf(CURSOR_POS(y,x));
 	//printf("%c[%d;%dH",ESC,y,x);
 
-	for(i=0;i<line_height;i++){
-		for(j=0;j<column_width;j++){
+	for(i=0;i<GAMEFIELD_HEIGTH;i++){
+		for(j=0;j<GAMEFIELD_WIDTH;j++){
 			printf("=");
 		}
 		printf(CURSOR_POS(y+i,x));
@@ -61,28 +69,29 @@ void print_header(){
 
 	printf(CURSOR_POS(8,0)); // Position cursor at 8/0
 	printf(CLEAR_ABOVE_CURSOR);  // Clear all above cursor
+
 	int x_position = 0;
 
 	if(active_player){
-		printf("%c[34m",ESC); // Change color to blue
+		printf(FG_BLUE); // Change color to blue
 	}else{
-		printf("%c[32m",ESC); // color green
+		printf(FG_GREEN); // color green
 	}
 
 	int i = 0;
 
-	x_position = player_position[active_player]*column_width+1;
+	x_position = player_position[active_player]*GAMEFIELD_WIDTH+1;
 
 	printf("%c[0;%dH",ESC,x_position); // jump to x_position
 
-	for(i = 0; i < column_width;i++){
+	for(i = 0; i < GAMEFIELD_WIDTH;i++){
 		printf("=");
 	}
 
-	for(i = 1; i < (line_height - 2);i++){
-		printf("%c[%d;%dH",ESC,(i+1),x_position);
+	for(i = 1; i < (GAMEFIELD_HEIGTH - 2);i++){
+		printf(CURSOR_POS( i+1,x_position) );
 		printf("|");
-		printf("%c[%d;%dH",ESC,(i+1),(x_position+column_width));
+		printf(CURSOR_POS ((i+1),(x_position+GAMEFIELD_WIDTH)));
 		printf("|");
 	}
 
@@ -91,37 +100,45 @@ void print_header(){
 	printf("%c[?25h",ESC); // hide cursor??
 }
 
+/*
+ *  Prints a line of the game field. By repeatly calling this function the whole game field can be displayed.
+ *
+ */
+
 void printLine(int line_number){
 	int column_number = 0;
-	if(line_number % 8){
-		for(column_number = 0;column_number < 7;column_number++){
-				printf("|");
+	if(line_number % ROW_HEIGHT)
+	{
+		// Now we need to print a vertical line and field space.
+		for(column_number = 0;column_number < GAMEFIELD_WIDTH;column_number++){
+				printf("|"); //
 				int j = 0;
-				for(j = 0;j < column_width;j++){
-					printf(" ");
+				for(j = 0;j < COLUMN_WIDTH;j++){
+					printf(" "); // print spaces to fill up the invividual fields
 				}
-
 			}
-		printf("|\n");
+		printf("|\n"); // Print a vertical line at the and + newline
+
 	}else{
-		for(column_number = 0;column_number < 159;column_number++){
-			printf("-");
+		for(column_number = 0;column_number < GAMEFIELD_WIDTH*COLUMN_WIDTH+GAMEFIELD_WIDTH;column_number++){
+			printf("-"); // Print a horizontal line to seperate rows.
 		}
-		printf("-\n");
+		printf("-\n"); // Finally print a newline at the end.
 	}
 
 
 
 }
+
 // Prints the game fields
 void printFields(){
-	printf("%c[37m",ESC);
+	printf(FG_WHITE);
 	printf(CURSOR_POS(10,1));
 	int i = 0;
 	// Print upper border
 
-	for(i = 0; i < FIELD_WIDTH*column_width;i++){
-		printf("_");
+	for(i = 0; i < GAMEFIELD_WIDTH*COLUMN_WIDTH+GAMEFIELD_WIDTH+1;i++){
+		printf("_"); // Print upper border
 	}
 	printf("\n");
 	int j = 0;
@@ -131,8 +148,8 @@ void printFields(){
 	/*for(i = 0; i < 12;i++){
 			printf("_");
 	}*/
-	for(i = 1; i < 49;i++){
-		printLine(i);
+	for(i = 1; i < GAMEFIELD_HEIGTH*ROW_HEIGHT+1;i++){
+		printLine(i); // Print gamefield lines
 	}
 
 	fflush(stdout);
