@@ -12,32 +12,60 @@ void clearScreen(){
 
 }
 
+void print_dropped(int column,int row,int player){
+	int x = (column*column_width);
+	int y = (row*line_height)+8;
+	int i = 0;
+	int j = 0;
+	printf("%c[%d;%dH",ESC,y,x);
+
+	for(i=0;i<line_height;i++){
+		for(j=0;j<column_width;j++){
+			printf("=");
+		}
+		printf("%c[%d;%dH",ESC,y+i,x);
+	}
+
+}
+
+void print_column(int column){
+	int i = 6;
+	for(i = 6;i>=0;i--){
+		if(fields[column][i] != 0){
+			print_dropped(column,i,fields[column][i]);
+			break;
+		}
+	}
+}
 
 void print_header(){
 	printf("%c[8;0H",ESC);
 	printf("%c[1J",ESC);
 	int x_position = 0;
+
 	if(active_player){
-		x_position = player2_position*column_width+1;
 		printf("%c[34m",ESC);
 	}else{
-		x_position = player1_position*column_width+1;
-
 		printf("%c[32m",ESC);
 	}
+
 	int i = 0;
+
+	x_position = player_position[active_player]*column_width+1;
 
 	printf("%c[0;%dH",ESC,x_position);
 
 	for(i = 0; i < column_width;i++){
 		printf("=");
 	}
+
 	for(i = 1; i < (line_height - 2);i++){
 		printf("%c[%d;%dH",ESC,(i+1),x_position);
 		printf("|");
 		printf("%c[%d;%dH",ESC,(i+1),(x_position+column_width));
 		printf("|");
 	}
+
 	fflush(stdout);
 	printf("%c[37m",ESC);
 	printf("%c[?25h",ESC);

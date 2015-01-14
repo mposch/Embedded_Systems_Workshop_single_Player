@@ -116,7 +116,7 @@ static struct task_struct *tsk;
 static struct siginfo info;
 
 static int opened = 0;
-static int sig_count = 0;
+
 /*structure to keep everything in one place*/
 struct ctest {
 	/* dev_t is a 32bit variable with 12 bits for the major number and 20 for the minor number 
@@ -151,7 +151,7 @@ uint8_t *i2c_values = key_data.i2c_values;
 
 static uint8_t key_state = 0;
 static int pid_count = 0;
-
+static int irq_requested = 0;
 /*
 Attach driver specific functions to Linux Kernel file operation structure.
 These functions are used by the Kernel to access the device driver.
@@ -283,7 +283,7 @@ static irqreturn_t i2c_interrupt(int irq, void *dev_id){
 					//printk("key pressed\n");
 					i++;
 				}
-				if(i && sig_count){
+				if(i && pid_count){
 					send_sig_info(SIGUSR1,&info,tsk);
 				}
 				//printk("Key Pressed 0x%x\n",I20DAT);
@@ -300,10 +300,13 @@ static irqreturn_t i2c_interrupt(int irq, void *dev_id){
 int init_i2c(){
 	int ret;
 
-	ret = request_irq(9, i2c_interrupt, 0, DEVICE_NAME, NULL);
-	if (ret < 0){
-		printk("%s: Could not bind interrupt. Error: %i\n",DEVICE_NAME,ret);
-	return -EIO;
+	if(!irq_requested){
+		ret = request_irq(9, i2c_interrupt, 0, DEVICE_NAME, NULL);
+		if (ret < 0){
+			printk("%s: Could not bind interrupt. Error: %i\n",DEVICE_NAME,ret);
+		return -EIO;
+		}
+		irq_requested = 1;
 	}
 
 	PCONP |= (1<<7); //activate I2C0
@@ -431,8 +434,8 @@ static int ctest_close(struct inode* inode,
 	/*disable fast gpio ports - only applicable if THIS module
 	is the only one using gpio ports*/
 	//m_reg_bfc(SCS,(1<<0));
-	if(opened == 1){ //free irq and delete timer only when last time closed
-		free_irq(9,NULL);
+	if(opened == 1){ //delete timer only when last time closed
+
 		del_timer(&timer);
 		SCS &= ~(1<<0);
 	}
@@ -477,7 +480,7 @@ return -EINVAL;
 /* Free any dynamically allocated data here.*/
 static void __exit esw_4gew_exit(void)
 {
-
+	free_irq(9,NULL);
 	struct cdev *cdev = &ctest_dev.cdev;
 	dev_t devno = ctest_dev.devno;
   	cdev_del(cdev);
