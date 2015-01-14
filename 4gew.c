@@ -1,4 +1,3 @@
-/*There might be an error in this program, can you find it?*/
 #include <sys/ioctl.h>
 #include "4gew.h"
 #include <sys/types.h>
@@ -13,10 +12,9 @@
 
 volatile int player_position[2];
 volatile int active_player;
-volatile int fields[7][6];
-const int column_width = 13;
-const int line_height = 6;
-const int column_count = 7;
+volatile int fields[FIELD_WIDTH][FIELD_HEIGTH];
+
+
 
 int fd = -1;
 
@@ -55,6 +53,7 @@ void sig_handler(int sig){
 		}else {
 
 		}
+
 	}else if((key_data.gpio_values[0] != old_data.gpio_values[0]) && !key_data.gpio_values[0]){
 		if(active_player){
 			drop();
@@ -85,8 +84,8 @@ int init_4gew(){
 		key_data.i2c_values[i] = 0;
 		old_data.i2c_values[i] = 0;
 	}
-	for(i = 0; i < 7;i++){
-		for(j = 0; j < 6;j++){
+	for(i = 0; i < FIELD_WIDTH;i++){
+		for(j = 0; j < FIELD_HEIGTH;j++){
 			fields[i][j] = 0;
 		}
 	}
@@ -95,12 +94,13 @@ int init_4gew(){
 	print_header();
 	printFields();
 
+	// Open the Kernel module
 	fd = open("/dev/lpc2478_4gew",O_RDONLY);
 	if(fd < 0){
 		printf("failed to open device file\n");
 		return -1;
 	}
-
+	// Set our Process ID to receive Signals
 	int ret = ioctl(fd, CTEST_SETPID,getpid());
 	if(ret < 0){
 		printf("failed to set PID: %d\n",ret);
@@ -124,10 +124,10 @@ void exit_4gew(){
 	if(fd > 0)
 		close(fd);
 	exit_tui();
+// Enable buffering and echo  again
 	system ("/bin/stty cooked");
 	system ("/bin/stty echo");
 }
-
 
 int main (void)
 {
@@ -135,8 +135,9 @@ int main (void)
 		exit_4gew();
 		return -1;
 	}
-
-	while(42){
+// The answer to everything is 42
+	while(ANSWER_TO_EVERYTHING)
+	{
 		if(getchar() == 27){
 			break;
 		}

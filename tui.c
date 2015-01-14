@@ -1,33 +1,52 @@
 #include<stdio.h>
 #include"4gew.h"
+/*
+ * Defines used for VT100 Terminal
+ */
 #define ESC 27
-
+#define CLS "%c[2J",ESC
+#define HOME "%c[H",ESC
+#define FG_WHITE "%c[37m",ESC
+#define CURSOR_POS(X,Y) "%c[%d;%dH",ESC,X,Y
+#define CLEAR_ABOVE_CURSOR "%c[37m",ESC
+/*
+ * exit_tui
+ * Clean up VT100 Settings
+ *
+ */
 void exit_tui(){
 	printf("%c[60;0H",ESC);
-	printf("%c[37m",ESC);
+	printf(FG_WHITE);
 }
-
+/*
+ * Clears the VT100 Screen
+ */
 void clearScreen(){
-	printf( "%c[2J", ESC );
-	printf("%c[H",ESC); // home position cusor
-
+	printf(CLS); // Clear screen
+	printf(HOME); // home position cusor
 }
 
+// Prints a dropped item at the specified row and column. Uses line_ width and line height.
 void print_dropped(int column,int row,int player){
 	int x = (column*column_width);
 	int y = (row*line_height)+8;
 	int i = 0;
 	int j = 0;
-	printf("%c[%d;%dH",ESC,y,x);
+	printf(CURSOR_POS(y,x));
+	//printf("%c[%d;%dH",ESC,y,x);
 
 	for(i=0;i<line_height;i++){
 		for(j=0;j<column_width;j++){
 			printf("=");
 		}
-		printf("%c[%d;%dH",ESC,y+i,x);
+		printf(CURSOR_POS(y+i,x));
+		//printf("%c[%d;%dH",ESC,y+i,x);
 	}
 
 }
+/*
+ * Prints a column, if necessary print a occupied field
+ */
 
 void print_column(int column){
 	int i = 6;
@@ -38,10 +57,10 @@ void print_column(int column){
 		}
 	}
 }
-
 void print_header(){
-	printf("%c[8;0H",ESC); // Position cursor at 8/0
-	printf("%c[1J",ESC);  // Clear all above cursor
+
+	printf(CURSOR_POS(8,0)); // Position cursor at 8/0
+	printf(CLEAR_ABOVE_CURSOR);  // Clear all above cursor
 	int x_position = 0;
 
 	if(active_player){
@@ -94,12 +113,14 @@ void printLine(int line_number){
 
 
 }
-
+// Prints the game fields
 void printFields(){
 	printf("%c[37m",ESC);
-	printf("%c[10;1H",ESC);
+	printf(CURSOR_POS(10,1));
 	int i = 0;
-	for(i = 0; i < 160;i++){
+	// Print upper border
+
+	for(i = 0; i < FIELD_WIDTH*column_width;i++){
 		printf("_");
 	}
 	printf("\n");
@@ -119,4 +140,3 @@ void printFields(){
 
 }
 
-// /uClinuxdist/vendors/embemmedArtists/
