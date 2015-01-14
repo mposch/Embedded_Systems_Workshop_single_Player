@@ -1,4 +1,4 @@
-SRC=4gew.c tui.c
+SRC=4gew.c tui.c gamelogic.c
 OBJ=$(SRC:.c=.o)
 EXEC=4gew
 CC = /home/es/uClinux-dist/tools/ucfront-gcc /usr/local/arm-linux/bin/gcc

@@ -1,25 +1,8 @@
 #include<stdio.h>
 #include"4gew.h"
-/*
- * Defines used for VT100 Terminal
- */
-#define ESC 27
-#define CLS "%c[2J",ESC
-#define CLEAR_ABOVE_CURSOR "%c[1J",ESC
-#define HIDE_CURSOR "%c[?25h",ESC
-
-#define HOME "%c[H",ESC
-#define FG_WHITE "%c[37m",ESC
-#define FG_BLUE "%c[34m",ESC
-#define FG_GREEN "%c[32m",ESC
-
-#define BG_BLUE  "%c[44m",ESC
-#define BG_GREEN "%c[42m",ESC
-#define BG_DEFAULT "%c[49m",ESC
-#define BG_BLACK "%c[40m",ESC
 
 
-#define CURSOR_POS(X,Y) "%c[%d;%dH",ESC,X,Y
+
 
 //#define CLEAR_ABOVE_CURSOR "%c[37m",ESC
 

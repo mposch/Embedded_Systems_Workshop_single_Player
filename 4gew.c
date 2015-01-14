@@ -1,5 +1,6 @@
 #include <sys/ioctl.h>
 #include "4gew.h"
+#include "gamelogic.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -33,7 +34,6 @@ void drop(){
 		{
 			fields[player_position[active_player]][i] = active_player;
 			print_dropped(player_position[active_player],i,active_player);
-
 			break;
 		}
 	}
@@ -74,6 +74,16 @@ void sig_handler(int sig){
 		old_data.i2c_values[i] = key_data.i2c_values[i];
 	}
 	print_header();
+
+	//if (check_win_condition())
+
+	printf(CURSOR_POS(40,1));
+
+	printf("WIN CONDITION:%d", check_win_condition());
+
+
+
+
 }
 
 int init_4gew(){
