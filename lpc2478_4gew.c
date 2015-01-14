@@ -1,5 +1,10 @@
 /*
 link command ln -s /home/es/workspace/Embedded_Systems_Workshop_single_Player/lpc2478_4gew.c
+location of config file:
+
+/home/es/uClinux-dist/vendors/EmbeddedArtists/LPC2478OEM_Board/rc
+
+
 
     This module implements a driver for LPC2468 ctest peripheral.
 
@@ -134,6 +139,8 @@ struct ctest {
 
 static struct ctest ctest_dev;
 
+// define soft timer initialisation data
+
 struct timer_list timer;
 
 //uint8_t gpio_values[5] = {0,0,0,0,0};
@@ -176,11 +183,12 @@ static struct file_operations ctest_fops = {
  *****************************************************************************/
 
 //get_gpio_values detects falling edges on the joystick
+
 int get_gpio_values(){
 	int i = 0;
 	if( gpio_values[0] == 0 && FIO2PIN2 & (1<<6)){
 			gpio_values[0] = 1;
-			i++;
+			i++; // Count changes
 		}else if(gpio_values[0] == 1 &&!(FIO2PIN2 & (1<<6))){
 			gpio_values[0] = 0;
 			i++;
@@ -224,6 +232,7 @@ int get_gpio_values(){
 }
 
 void i2c_start(){
+	// Enable i2c on chip
 	I20CONSET = (1 << 5);
 }
 
@@ -236,6 +245,7 @@ void timer_callback (unsigned long data){
 
 	}
 	i2c_start();
+	// Restart timer
 	timer.expires += 10;
 	add_timer(&timer);
 }
@@ -245,7 +255,7 @@ static irqreturn_t i2c_interrupt(int irq, void *dev_id){
 	switch(I20STAT){
 		case 0x08:		//start condition
 		case 0x10:		//repeated start condition
-			I20DAT = 0xC1;
+			I20DAT = 0xC1; //start adress of multiplexer 0x60 shifted left
 			//I20DAT = (i2c_address << 1) | 1;
 			I20CONCLR = (1<<3) | (1 << 5);
 			break;
@@ -253,7 +263,7 @@ static irqreturn_t i2c_interrupt(int irq, void *dev_id){
 			//printk("Adresse %x liefert ACK\n",I20DAT);
 			I20CONCLR = (1<<3);
 			break;
-		case 0x58:		//data received, NACK send
+		case 0x58:		//data received, NACK send. Data received, ack sent.
 			if(key_state != I20DAT){
 				if(i2c_values[0] == 0 && I20DAT & 1){
 					i2c_values[0] = 1;

@@ -4,11 +4,12 @@
 
 void exit_tui(){
 	printf("%c[60;0H",ESC);
+	printf("%c[37m",ESC);
 }
 
 void clearScreen(){
 	printf( "%c[2J", ESC );
-	printf("%c[H",ESC);
+	printf("%c[H",ESC); // home position cusor
 
 }
 
@@ -39,21 +40,21 @@ void print_column(int column){
 }
 
 void print_header(){
-	printf("%c[8;0H",ESC);
-	printf("%c[1J",ESC);
+	printf("%c[8;0H",ESC); // Position cursor at 8/0
+	printf("%c[1J",ESC);  // Clear all above cursor
 	int x_position = 0;
 
 	if(active_player){
-		printf("%c[34m",ESC);
+		printf("%c[34m",ESC); // Change color to blue
 	}else{
-		printf("%c[32m",ESC);
+		printf("%c[32m",ESC); // color green
 	}
 
 	int i = 0;
 
 	x_position = player_position[active_player]*column_width+1;
 
-	printf("%c[0;%dH",ESC,x_position);
+	printf("%c[0;%dH",ESC,x_position); // jump to x_position
 
 	for(i = 0; i < column_width;i++){
 		printf("=");
@@ -67,8 +68,8 @@ void print_header(){
 	}
 
 	fflush(stdout);
-	printf("%c[37m",ESC);
-	printf("%c[?25h",ESC);
+	printf("%c[37m",ESC); // change color to white
+	printf("%c[?25h",ESC); // hide cursor??
 }
 
 void printLine(int line_number){
@@ -118,3 +119,4 @@ void printFields(){
 
 }
 
+// /uClinuxdist/vendors/embemmedArtists/
