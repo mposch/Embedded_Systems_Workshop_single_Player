@@ -14,6 +14,7 @@
 volatile int player_position[3];
 volatile int active_player;
 volatile int fields[GAMEFIELD_WIDTH][GAMEFIELD_HEIGTH];
+volatile int winner = 0;
 
 
 
@@ -26,20 +27,30 @@ struct data {
 
 struct data key_data;
 struct data old_data;
-void drop(){
+int drop(){
 	int i = GAMEFIELD_HEIGTH-1;
+	int j = 0;
 	for (i = GAMEFIELD_HEIGTH-1;i>=0;i--)
 	{
+
 		if(fields[player_position[active_player]][i] == 0)
 		{
 			fields[player_position[active_player]][i] = active_player;
 			print_dropped(player_position[active_player],i,active_player);
-			break;
+
+			if(check_win_condition(player_position[active_player],i)){
+				print_status("chekc_win_condition true");
+				winner = active_player;
+			}
+			return 1;
 		}
 	}
+	return 0;
 }
 void sig_handler(int sig){
 // Received a signal. Keypressed or Joytick pressed.
+	if(winner)
+		return;	//if there is a winner, don't react to joystick or keys
 
 	read(fd,&key_data,sizeof(struct data));
 	// Check Joystick Right
@@ -58,11 +69,11 @@ void sig_handler(int sig){
 		}
 	}else if((key_data.gpio_values[0] != old_data.gpio_values[0]) && !key_data.gpio_values[0]){
 		if(active_player == 1){
-			drop();
-			active_player = 2;
+			if(drop())
+				active_player = 2;
 		}else{
-			drop();
-			active_player = 1;
+			if(drop())
+				active_player = 1;
 		}
 	}
 
@@ -79,7 +90,11 @@ void sig_handler(int sig){
 
 	printf(CURSOR_POS(40,1));
 
-	printf("WIN CONDITION:%d", check_win_condition());
+	if(winner){
+		print_status("Winner: %d",winner);
+	}
+
+	//printf("WIN CONDITION:%d", check_win_condition());
 
 
 
@@ -103,9 +118,12 @@ int init_4gew(){
 		}
 	}
 
+
+
 	clearScreen();
 	print_header();
 	printFields();
+
 
 	// Open the Kernel module
 	fd = open("/dev/lpc2478_4gew",O_RDONLY);

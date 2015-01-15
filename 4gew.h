@@ -20,6 +20,7 @@
 #define ESC 27
 #define CLS "%c[2J",ESC
 #define CLEAR_ABOVE_CURSOR "%c[1J",ESC
+#define CLEAR_LINE "%c[2K",ESC
 #define HIDE_CURSOR "%c[?25h",ESC
 
 #define HOME "%c[H",ESC
@@ -48,5 +49,6 @@ void print_header();
 void printLine(int line_number);
 void printFields();
 void exit_tui();
+void print_status(char* string,...);
 
 #endif

@@ -8,7 +8,7 @@
 #ifndef GAMELOGIC_H_
 #define GAMELOGIC_H_
 
-int check_win_condition();
+int check_win_condition(int start_column,int start_row);
 
 
 

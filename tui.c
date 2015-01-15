@@ -1,4 +1,5 @@
 #include<stdio.h>
+#include<stdarg.h>
 #include"4gew.h"
 
 
@@ -107,6 +108,20 @@ void printLine(int line_number){
 
 
 
+}
+
+void inline clear_status(){
+	printf(CURSOR_POS(GAMEFIELD_WIDTH*(ROW_HEIGHT+1)+1,0));
+	printf(CLEAR_LINE);
+}
+
+void print_status(char* string,...){
+	va_list arg;
+	clear_status();
+	printf(CURSOR_POS(GAMEFIELD_WIDTH*(ROW_HEIGHT+1)+1,0));
+	va_start(arg,string);
+	vprintf(string,arg);
+	va_end(arg);
 }
 
 // Prints the game fields
