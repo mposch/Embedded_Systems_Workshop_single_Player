@@ -22,3 +22,6 @@ run: prog
 	./scripts/run.script ./ $(EXEC)
 debug: prog
 	./scripts/gdb.script ./ $(EXEC)
+kernel:	prog
+	cd /home/es/uClinux-dist && make
+	
