@@ -47,10 +47,11 @@
 /*
  *
  */
+
 extern volatile int player_position[];
 extern volatile int active_player;
 extern volatile int fields[GAMEFIELD_WIDTH][GAMEFIELD_HEIGTH];
-
+extern volatile int winner;
 
 extern int fd;
 /*

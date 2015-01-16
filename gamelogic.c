@@ -6,17 +6,51 @@
  */
 #include "gamelogic.h"
 #include "4gew.h"
+
+#include <stdio.h>
+
 #define WIN_CONDITION 4
 #define rows_of_array(name)       \
     (sizeof(name   ) / sizeof(name[0][0]) / columns_of_array(name))
 #define columns_of_array(name)    \
     (sizeof(name[0]) / sizeof(name[0][0]))
 
+
+void announce_winner(int winner) {
+	printf(CURSOR_POS(30,1));
+	printf(BLINK_ON);
+	printf(FG_WHITE);
+	if (winner == 1)
+		printf(BG_GREEN);
+	if (winner == 2)
+		printf(BG_BLUE);
+	printf("WINNER: PLAYER %d", winner);
+	printf(BG_DEFAULT);
+	printf(NEWLINE);
+	printf(NEWLINE);
+	printf(NEWLINE);
+}
+
+void change_player() {
+	// change players
+	switch (active_player) {
+	case 1:
+		active_player = 2;
+		break;
+	case 2:
+		active_player = 1;
+		break;
+	default:
+		break;
+	}
+}
+
+
 int check_win_condition(int start_col,int start_row)
 {
 	int row,col;
 	int win=1;
-	int oldval=0;
+//	int oldval=0;
 	//print_status("check_win_condition called: %d %d\n",start_col,start_row);
 // Cheat
 	/*fields[0][0] = 1;
@@ -115,6 +149,5 @@ int check_win_condition(int start_col,int start_row)
 	return 0;
 
 }
-
 
 
