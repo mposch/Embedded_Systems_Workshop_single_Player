@@ -25,7 +25,7 @@
 #define HIDE_CURSOR "%c[?25h",ESC
 #define BLINK_ON "%c[5m",ESC
 
-
+#define NEWLINE "\n"
 
 #define HOME "%c[H",ESC
 #define FG_WHITE "%c[37m",ESC
