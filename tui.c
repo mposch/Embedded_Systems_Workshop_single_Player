@@ -129,7 +129,7 @@ void print_status(char* string,...){
 
 // Prints the game fields
 void printFields(){
-	printf(FG_BLACK);
+	printf(FG_MAGENTA);
 
 	//printf(CURSOR_POS(10,1));
 	printf(CURSOR_POS(ROW_HEIGHT+1,0)); // Position cursor

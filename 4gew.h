@@ -32,11 +32,13 @@
 #define FG_BLUE "%c[34m",ESC
 #define FG_GREEN "%c[32m",ESC
 #define FG_BLACK "%c[30m",ESC
+#define FG_MAGENTA "%c[35m",ESC
 
 #define BG_BLUE  "%c[44m",ESC
 #define BG_GREEN "%c[42m",ESC
 #define BG_DEFAULT "%c[49m",ESC
 #define BG_BLACK "%c[40m",ESC
+
 
 #define LEFT 97
 #define RIGHT 115

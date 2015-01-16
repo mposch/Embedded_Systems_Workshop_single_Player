@@ -43,7 +43,6 @@ void announce_winner() {
 	printf(NEWLINE);
 	printf(NEWLINE);
 	printf(NEWLINE);
-
 }
 void change_player() {
 	// change players
@@ -263,7 +262,9 @@ while (ANSWER_TO_EVERYTHING) {
 	print_header();
 } // end while loop
 //sleep(10);
-exit_4gew();
+
+
+sigterm_handler(SIGTERM);
 return 0;
 }
 
