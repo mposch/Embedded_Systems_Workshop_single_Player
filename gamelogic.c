@@ -26,6 +26,7 @@ void announce_winner(int winner) {
 		printf(BG_BLUE);
 	printf("WINNER: PLAYER %d", winner);
 	printf(BG_DEFAULT);
+	printf(FG_DEFAULT);
 	printf(NEWLINE);
 	printf(NEWLINE);
 	printf(NEWLINE);

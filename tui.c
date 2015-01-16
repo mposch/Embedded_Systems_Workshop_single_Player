@@ -4,6 +4,8 @@
 #include"gamelogic.h"
 #include <signal.h>
 
+
+
 //#define CLEAR_ABOVE_CURSOR "%c[37m",ESC
 
 /*
@@ -13,7 +15,8 @@
  */
 void exit_tui() {
 	printf("%c[60;0H", ESC);
-	printf(FG_BLACK);
+	printf(FG_DEFAULT);
+	printf(BG_DEFAULT);
 }
 /*
  * Clears the VT100 Screen
@@ -24,6 +27,11 @@ void clearScreen() {
 	printf(HOME); // home position cusor
 }
 
+/*
+ * Print Token
+ * Prints the token of the active player at the specified position (in x and y coordinates)
+ *
+ */
 void print_token(int y, int x, int player) {
 	int i = 0;
 	int j = 0;
@@ -34,15 +42,18 @@ void print_token(int y, int x, int player) {
 				printf(BG_GREEN);
 			else if (player == 2)
 				printf(BG_BLUE);
-
 			printf(" ");
 		}
 		printf(CURSOR_POS(y+i,x));
 	}
 	printf(BG_DEFAULT);
 }
+/*
+ * Print Dropped:
+ * Prints a dropped item at the specified row and column. Uses line_ width and line height.
+ *
+ */
 
-// Prints a dropped item at the specified row and column. Uses line_ width and line height.
 void print_dropped(int column, int row, int player) {
 
 	int x = (column * COLUMN_WIDTH) + (column + 1) + 1;
@@ -63,6 +74,9 @@ void print_dropped(int column, int row, int player) {
 //		}
 //	}
 //}
+/*
+ * Prints the Header, announces active player. Prints the tokens before dropping.
+ */
 void print_header() {
 	printf(CURSOR_POS(ROW_HEIGHT,0)); // Position cursor
 	printf(CLEAR_ABOVE_CURSOR); // Clear all above cursor
@@ -70,25 +84,24 @@ void print_header() {
 	x_position = 2 + player_position[active_player] * (COLUMN_WIDTH + 1);
 	print_token(0, x_position, active_player);
 
-	if (active_player == 1)
-	{
+	if (active_player == 1) {
 		printf(BG_GREEN);
-		printf(FG_WHITE);
+		printf(FG_DEFAULT);
 		print_status("Player 1");
 		printf(BG_DEFAULT);
 	}
 
-	if (active_player == 2)
-	{
+	if (active_player == 2) {
 		printf(BG_BLUE);
-		printf(FG_WHITE);
-	print_status("Player 2");
+		printf(FG_DEFAULT);
+		print_status("Player 2");
 		printf(BG_DEFAULT);
 	}
 }
 
 /*
- *  Prints a line of the game field. By repeatly calling this function the whole game field can be displayed.
+ *  Prints a line of the game field. By repeatly calling this function
+ *  the whole game field can be displayed.
  *
  */
 
@@ -131,9 +144,13 @@ void print_status(char* string, ...) {
 	va_end(arg);
 }
 
-// Prints the game fields
+/*
+ * Printfields
+ * Prints the whole game field, by calling printline.
+ */
 void printFields() {
-	printf(FG_MAGENTA);
+
+	printf(FIELD_COLOR);
 
 	//printf(CURSOR_POS(10,1));
 	printf(CURSOR_POS(ROW_HEIGHT+1,0)); // Position cursor
@@ -144,8 +161,7 @@ void printFields() {
 
 }
 
-int drop()
-{
+int drop() {
 	int i = GAMEFIELD_HEIGTH - 1;
 	for (i = GAMEFIELD_HEIGTH - 1; i >= 0; i--) {
 		if (fields[player_position[active_player]][i] == 0) {
@@ -166,7 +182,7 @@ int drop()
 			return 1;
 		}
 	}
-		return 0;
+	return 0;
 
 }
 

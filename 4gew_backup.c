@@ -8,8 +8,6 @@
 
 #include <ncurses/ncurses.h>
 
-
-
 void show_keystate() {
 	// A small test for Keys,..,
 	if (i2c_state_change()) {

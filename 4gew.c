@@ -21,6 +21,7 @@ volatile int fields[GAMEFIELD_WIDTH][GAMEFIELD_HEIGTH];
 volatile int winner = 0;
 
 int fd = -1;
+int sigcount =0;
 
 struct data {
 	uint8_t gpio_values[5];
@@ -45,10 +46,16 @@ void sigterm_handler(int sig) {
 	exit_4gew();
 	exit(0);
 }
+
 void sig_handler(int sig) {
 	if (sig == SIGUSR1) {
+
 // Received a signal. Keypressed or Joytick pressed.
-		//printf("Sighandler..");
+		printf("Sighandler.. %d",sigcount++);
+		int i;
+		for ( i = 0;i<5;i++) printf("i2c:%d ", key_data.i2c_values[i]);
+
+		printf(NEWLINE);
 		if (winner)
 			return; //if there is a winner, don't react to joystick or keys
 
@@ -58,37 +65,34 @@ void sig_handler(int sig) {
 				&& !key_data.gpio_values[2]) {
 			if (player_position[active_player] < GAMEFIELD_WIDTH - 1) {
 				player_position[active_player]++;
-			} else {
 			}
 		} else if ((key_data.gpio_values[4] != old_data.gpio_values[4])
 				&& !key_data.gpio_values[4]) {
 			if (player_position[active_player] > 0) {
 				player_position[active_player]--;
-			} else {
-
 			}
 		} else if ((key_data.gpio_values[0] != old_data.gpio_values[0])
 				&& !key_data.gpio_values[0]) {
-			if (drop() == 2) {
-			}
-
+			drop();
 		}
 
-		else if (key_data.i2c_values[1] == 0) {
+		else if ((key_data.i2c_values[1] == 0)
+				) {
 			if (player_position[active_player] < GAMEFIELD_WIDTH - 1) {
 				player_position[active_player]++;
 			}
 
-		} else if (key_data.i2c_values[0] == 0) {
+		} else if ((key_data.i2c_values[0] == 0)
+				) {
 			if (player_position[active_player] > 0) {
 				player_position[active_player]--;
 			}
-		} else if (key_data.i2c_values[2] == 0) {
+		} else if ((key_data.i2c_values[2] == 0)
+				) {
 			drop();
 		}
 
-		int i;
-		//for ( i = 0;i<5;i++) printf("i2c:%d ", key_data.i2c_values[i]);
+
 		//printf(NEWLINE);
 
 		for (i = 0; i < 5; i++) {
