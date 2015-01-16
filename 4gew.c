@@ -11,12 +11,14 @@
 #include <sys/ioctl.h>/*ioctl(),...*/
 #include <asm-generic/ioctls.h>/*ioctls identifiers*/
 
+/*
+ * GLOBAL VARIABLES
+ */
+
 volatile int player_position[3];
 volatile int active_player;
 volatile int fields[GAMEFIELD_WIDTH][GAMEFIELD_HEIGTH];
 volatile int winner = 0;
-
-
 
 int fd = -1;
 
@@ -27,161 +29,226 @@ struct data {
 
 struct data key_data;
 struct data old_data;
-int drop(){
-	int i = GAMEFIELD_HEIGTH-1;
-	int j = 0;
-	for (i = GAMEFIELD_HEIGTH-1;i>=0;i--)
-	{
 
-		if(fields[player_position[active_player]][i] == 0)
-		{
-			fields[player_position[active_player]][i] = active_player;
-			print_dropped(player_position[active_player],i,active_player);
+void change_player() {
+	// change players
+	switch (active_player) {
+	case 1:
+		active_player = 2;
+		break;
+	case 2:
+		active_player = 1;
+		break;
+	default:
+		break;
+	}
+}
 
-			if(check_win_condition(player_position[active_player],i)){
-				print_status("chekc_win_condition true");
+/*
+ * Drop
+ * Returns 1 if a item was dropped, 0 Else
+ * Returns 2 if A Player has won.
+ *
+ */
+int drop() {
+	int i = GAMEFIELD_HEIGTH - 1;
+	for (i = GAMEFIELD_HEIGTH - 1; i >= 0; i--) {
+		if (fields[player_position[active_player]][i] == 0) {
+			fields[player_position[active_player]][i] = active_player; // S tore occupied field
+			print_dropped(player_position[active_player], i, active_player); //Print the token
+			// Check win
+			if (check_win_condition(player_position[active_player], i)) {
 				winner = active_player;
-			}
+				announce_winner();
+
+				raise (SIGTERM); // After one player won, Quit the program
+
+				return 2;
+
+				// change players
+			} // nobody has won, continiue game
+			change_player();
 			return 1;
 		}
 	}
+
+	// nothing was dropped (row full)
 	return 0;
 }
-void sig_handler(int sig){
+void sigterm_handler(int sig) {
+	// Cleanup resources;
+	if (sig == SIGTERM) {
+		exit_tui();
+		exit_4gew();
+		exit(0);
+	}
+}
+void sig_handler(int sig) {
+	if (sig == SIGUSR1) {
 // Received a signal. Keypressed or Joytick pressed.
-	if(winner)
-		return;	//if there is a winner, don't react to joystick or keys
+		if (winner)
+			return; //if there is a winner, don't react to joystick or keys
 
-	read(fd,&key_data,sizeof(struct data));
-	// Check Joystick Right
-	if((key_data.gpio_values[2] != old_data.gpio_values[2]) && !key_data.gpio_values[2]){
-		if(player_position[active_player] < GAMEFIELD_WIDTH-1){
-			player_position[active_player]++;
-		}else {
+		read(fd, &key_data, sizeof(struct data));
+		// Check Joystick Right
+		if ((key_data.gpio_values[2] != old_data.gpio_values[2])
+				&& !key_data.gpio_values[2]) {
+			if (player_position[active_player] < GAMEFIELD_WIDTH - 1) {
+				player_position[active_player]++;
+			} else {
 
+			}
+
+		} else if ((key_data.gpio_values[4] != old_data.gpio_values[4])
+				&& !key_data.gpio_values[4]) {
+			if (player_position[active_player] > 0) {
+				player_position[active_player]--;
+			} else {
+
+			}
+		} else if ((key_data.gpio_values[0] != old_data.gpio_values[0])
+				&& !key_data.gpio_values[0]) {
+
+			if (drop() == 2) {
+
+			}
 		}
 
-	}else if((key_data.gpio_values[4] != old_data.gpio_values[4]) && !key_data.gpio_values[4]){
-		if(player_position[active_player] > 0){
-			player_position[active_player]--;
-		}else {
-
+		int i;
+		for (i = 0; i < 5; i++) {
+			old_data.gpio_values[i] = key_data.gpio_values[i];
 		}
-	}else if((key_data.gpio_values[0] != old_data.gpio_values[0]) && !key_data.gpio_values[0]){
-		if(active_player == 1){
-			if(drop())
-				active_player = 2;
-		}else{
-			if(drop())
-				active_player = 1;
+		for (i = 0; i < 4; i++) {
+			old_data.i2c_values[i] = key_data.i2c_values[i];
 		}
+		print_header();
+
+
 	}
+}
+void announce_winner()
+{
+			printf(CURSOR_POS(30,1));
+			printf(BLINK_ON);
+			printf(FG_WHITE);
+			if (winner==1) printf(BG_GREEN);
+			if (winner==2) printf(BG_BLUE);
+			printf("WINNER: %d",winner);
 
-	int i;
-	for(i = 0;i< 5;i++){
-		old_data.gpio_values[i] = key_data.gpio_values[i];
-	}
-	for(i = 0; i < 4;i++){
-		old_data.i2c_values[i] = key_data.i2c_values[i];
-	}
-	print_header();
-
-	//if (check_win_condition())
-
-	printf(CURSOR_POS(40,1));
-
-	if(winner){
-		print_status("Winner: %d",winner);
-	}
-
-	//printf("WIN CONDITION:%d", check_win_condition());
-
-
+			printf(BG_DEFAULT);
 
 
 }
 
-int init_4gew(){
-	int i,j;
+int init_4gew() {
+	int i, j;
 	active_player = 1;
-	for(i = 0; i < 5;i++){
+	for (i = 0; i < 5; i++) {
 		key_data.gpio_values[i] = 0;
 		old_data.gpio_values[i] = 0;
 	}
-	for(i = 0; i < 4;i++){
+	for (i = 0; i < 4; i++) {
 		key_data.i2c_values[i] = 0;
 		old_data.i2c_values[i] = 0;
 	}
-	for(i = 0; i < GAMEFIELD_WIDTH;i++){
-		for(j = 0; j < GAMEFIELD_HEIGTH;j++){
+	for (i = 0; i < GAMEFIELD_WIDTH; i++) {
+		for (j = 0; j < GAMEFIELD_HEIGTH; j++) {
 			fields[i][j] = 0;
 		}
 	}
-
-
 
 	clearScreen();
 	print_header();
 	printFields();
 
-
 	// Open the Kernel module
-	fd = open("/dev/lpc2478_4gew",O_RDONLY);
-	if(fd < 0){
+	fd = open("/dev/lpc2478_4gew", O_RDONLY);
+	if (fd < 0) {
 		printf("failed to open device file\n");
 		return -1;
 	}
 	// Set our Process ID to receive Signals
-	int ret = ioctl(fd, CTEST_SETPID,getpid());
-	if(ret < 0){
-		printf("failed to set PID: %d\n",ret);
+	int ret = ioctl(fd, CTEST_SETPID, getpid());
+
+	if (ret < 0) {
+		printf("failed to set PID: %d\n", ret);
 		return -1;
 	}
-
-
-	signal(SIGUSR1,sig_handler);
-
-
+	signal(SIGUSR1, sig_handler);
+	signal(SIGTERM, sigterm_handler);
 
 //Disable buffering in console
-	system ("/bin/stty raw");
+	system("/bin/stty raw");
 //Disable echoing
-	system ("/bin/stty -echo");
+	system("/bin/stty -echo");
 	return 0;
 }
 
-void exit_4gew(){
+void exit_4gew() {
 
-	if(fd > 0)
+	if (fd > 0)
 		close(fd);
 	exit_tui();
 // Enable buffering and echo  again
-	system ("/bin/stty cooked");
-	system ("/bin/stty echo");
+	system("/bin/stty cooked");
+	system("/bin/stty echo");
 }
 
-int main (void)
-{
-	if(init_4gew()){
-		exit_4gew();
-		return -1;
-	}
-// The answer to everything is 42
-	while(ANSWER_TO_EVERYTHING)
-	{
-		if(getchar() == 27){
-			break;
-		}
-		//getchar();
-		//break;
+//int keyboard_input(volatile int player_position[3],
+//		volatile int active_player)
+int keyboard_input() {
+	if (winner)
+		return 1;
 
+	// Keyboard
+	char c;
+	c = getchar();
+	printf("Char: %d", c);
+	switch (c) {
+	case ESC: {
+		raise(SIGTERM);
+		return 1;
+		break;
 	}
-	//sleep(10);
-	exit_4gew();
+	case RIGHT: {
+		if (player_position[active_player] < GAMEFIELD_WIDTH - 1) {
+			player_position[active_player]++;
+		}
+		break;
+	} // end case
+	case LEFT: {
+		if (player_position[active_player] > 0) {
+			player_position[active_player]--;
+		}
+		break;
+	}
+
+	case DROP: {
+		drop();
+		break;
+	}
+	default:
+		break;
+	}
 	return 0;
 }
 
+int main(void) {
 
+	if (init_4gew()) {
+		exit_4gew();
+		return -1;
+	}
 
-
+// The answer to everything is 42
+	while (ANSWER_TO_EVERYTHING) {
+		// Keyboard
+		if (keyboard_input(player_position, active_player))
+			break;
+		print_header();
+	} // end while loop
+	  //sleep(10);
+	exit_4gew();
+	return 0;
+}
 

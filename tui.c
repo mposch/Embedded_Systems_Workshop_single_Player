@@ -15,7 +15,7 @@
  */
 void exit_tui(){
 	printf("%c[60;0H",ESC);
-	printf(FG_WHITE);
+	printf(FG_BLACK);
 }
 /*
  * Clears the VT100 Screen
@@ -75,8 +75,11 @@ void print_header(){
 	x_position = 2+player_position[active_player]*(COLUMN_WIDTH+1);
 	print_token(0,x_position,active_player);
 
+	if (active_player ==1) print_status("Player 1");
+	if (active_player ==2) print_status("Player 2");
+
 	fflush(stdout);
-	printf(FG_WHITE); // change color to white
+	printf(FG_BLACK); // change color to white
 	printf("%c[?25h",ESC); // hide cursor??
 }
 
@@ -126,7 +129,7 @@ void print_status(char* string,...){
 
 // Prints the game fields
 void printFields(){
-	printf(FG_WHITE);
+	printf(FG_BLACK);
 
 	//printf(CURSOR_POS(10,1));
 	printf(CURSOR_POS(ROW_HEIGHT+1,0)); // Position cursor
