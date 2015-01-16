@@ -143,7 +143,7 @@ int check_win_condition(int start_col,int start_row)
 		}else
 			break;
 	}
-	print_status("win: %d",win);
+	//print_status("win: %d",win);
 	if(win == WIN_CONDITION)
 		return fields[start_col][start_row];
 

@@ -51,9 +51,9 @@ void sig_handler(int sig) {
 	if (sig == SIGUSR1) {
 
 // Received a signal. Keypressed or Joytick pressed.
-		printf("Sighandler.. %d",sigcount++);
+		//printf("Sighandler.. %d",sigcount++);
 		int i;
-		for ( i = 0;i<5;i++) printf("i2c:%d ", key_data.i2c_values[i]);
+		//for ( i = 0;i<5;i++) printf("i2c:%d ", key_data.i2c_values[i]);
 
 		printf(NEWLINE);
 		if (winner)

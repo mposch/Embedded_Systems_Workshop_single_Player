@@ -246,7 +246,7 @@ void timer_callback (unsigned long data){
 	}
 	i2c_start();
 	// Restart timer
-	timer.expires += 10;
+	timer.expires += 5;
 	add_timer(&timer);
 }
 
@@ -267,6 +267,7 @@ static irqreturn_t i2c_interrupt(int irq, void *dev_id){
 			if(key_state != I20DAT){
 				if(i2c_values[0] == 0 && I20DAT & 1){
 					i2c_values[0] = 1;
+					i++;
 				}else if(i2c_values[0] == 1 && !(I20DAT & 1)){
 					i2c_values[0] = 0;
 					//printk("key pressed\n");
@@ -274,12 +275,14 @@ static irqreturn_t i2c_interrupt(int irq, void *dev_id){
 				}
 				if(i2c_values[1] == 0 && I20DAT & (1 << 1)){
 					i2c_values[1] = 1;
+					i++;
 				}else if(i2c_values[1] == 1 && !(I20DAT & (1 << 1))){
 					i2c_values[1] = 0;
 					//printk("key pressed\n");
 					i++;
 				}
 				if(i2c_values[2] == 0 && I20DAT & (1 << 2)){
+					i++;
 					i2c_values[2] = 1;
 				}else if(i2c_values[2] == 1 && !(I20DAT & (1 << 2))){
 					i2c_values[2] = 0;
@@ -288,6 +291,7 @@ static irqreturn_t i2c_interrupt(int irq, void *dev_id){
 				}
 				if(i2c_values[3] == 0 && I20DAT & (1 << 3)){
 					i2c_values[3] = 1;
+					i++;
 				}else if(i2c_values[3] == 1 && !(I20DAT & (1 << 3))){
 					i2c_values[3] = 0;
 					//printk("key pressed\n");
