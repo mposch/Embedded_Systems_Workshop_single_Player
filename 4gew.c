@@ -40,7 +40,7 @@ struct data old_data;
 // nothing was dropped (row full)
 void sigterm_handler(int sig) {
 	// Cleanup resources;
-	printf("Cleanup..");
+
 	exit_tui();
 	exit_4gew();
 	exit(0);

@@ -15,7 +15,6 @@ prog: $(OBJ)
 
 clean:
 	rm -f *~ *.gdb $(EXEC) $(OBJ)
-
 transfer: prog
 	./scripts/transfer.script ./ $(EXEC)
 run: prog

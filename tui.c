@@ -64,20 +64,27 @@ void print_dropped(int column, int row, int player) {
 //	}
 //}
 void print_header() {
-	printf(CURSOR_POS(ROW_HEIGHT+1,0)); // Position cursor
+	printf(CURSOR_POS(ROW_HEIGHT,0)); // Position cursor
 	printf(CLEAR_ABOVE_CURSOR); // Clear all above cursor
 	int x_position = 0;
 	x_position = 2 + player_position[active_player] * (COLUMN_WIDTH + 1);
 	print_token(0, x_position, active_player);
 
 	if (active_player == 1)
+	{
+		printf(BG_GREEN);
+		printf(FG_WHITE);
 		print_status("Player 1");
-	if (active_player == 2)
-		print_status("Player 2");
+		printf(BG_DEFAULT);
+	}
 
-	fflush(stdout);
-	printf(FG_BLACK); // change color to white
-	printf("%c[?25h", ESC); // hide cursor??
+	if (active_player == 2)
+	{
+		printf(BG_BLUE);
+		printf(FG_WHITE);
+	print_status("Player 2");
+		printf(BG_DEFAULT);
+	}
 }
 
 /*
