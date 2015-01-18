@@ -126,7 +126,8 @@ int init_4gew() {
 	clearScreen();
 	print_header();
 	printFields();
-
+	signal(SIGUSR1, sig_handler);
+		signal(SIGTERM, sigterm_handler);
 // Open the Kernel module
 	fd = open("/dev/lpc2478_4gew", O_RDONLY);
 	if (fd < 0) {
@@ -139,8 +140,7 @@ int init_4gew() {
 		printf("failed to set PID: %d\n", ret);
 		return -1;
 	}
-	signal(SIGUSR1, sig_handler);
-	signal(SIGTERM, sigterm_handler);
+
 //signal(SIGINT, sigterm_handler);
 
 //Disable buffering in console

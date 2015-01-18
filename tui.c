@@ -17,6 +17,7 @@ void exit_tui() {
 	printf("%c[60;0H", ESC);
 	printf(FG_DEFAULT);
 	printf(BG_DEFAULT);
+	//printf(BG_BLACK);
 }
 /*
  * Clears the VT100 Screen
